@@ -19,6 +19,7 @@ export const getMonitorState = async (
         "CF-Access-Client-Id": env.CF_ACCESS_CLIENT_ID,
         "CF-Access-Client-Secret": env.CF_ACCESS_CLIENT_SECRET,
       },
+      signal: AbortSignal.timeout(monitor.timeout || 5000),
     });
     if (!(monitor.expectedCodes || [200]).includes(response.status)) {
       state.status = "down";
