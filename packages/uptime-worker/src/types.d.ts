@@ -1,22 +1,22 @@
 interface UptimeStateMonitor {
-	name: string;
-	target: string;
-	status: 'up' | 'down';
-	protectedByAccess: boolean;
+  name: string;
+  target: string;
+  status: "up" | "down";
+  protectedByAccess: boolean;
 }
 
-export type UptimeState = UptimeStateMonitor[]
+export type UptimeState = UptimeStateMonitor[];
 
 export interface Monitor {
-	name: string;
-	tooltip?: string;
-	target: string;
-	method?: string; // default GET
-	statusPageLink?: string;
-	expectedCodes?: number[]; // default [200]
-	timeout?: number; // default 10000
+  name: string;
+  tooltip?: string;
+  target: string;
+  method?: string; // default GET
+  statusPageLink?: string;
+  expectedCodes?: number[]; // default [200]
+  timeout?: number; // default 10000
 }
 
 export interface UptimeWorkerConfig {
-	monitors: Monitor[];
+  monitors: Monitor[];
 }

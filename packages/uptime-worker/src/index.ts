@@ -1,6 +1,4 @@
-import { getMonitorState } from "./getMonitorState";
-import { UptimeState } from "./types";
-import { uptimeWorkerConfig } from "./uptime.config";
+import { updateUptimeKV } from "./updateUptimeKV";
 
 export default {
   async fetch(req) {
@@ -12,17 +10,8 @@ export default {
     );
   },
 
-  async scheduled(event, env, ctx): Promise<void> {
-    const state: UptimeState = [];
-    for (const monitor of uptimeWorkerConfig.monitors) {
-      const monitorState = await getMonitorState(monitor, { env });
-      state.push(monitorState);
-    }
-
-    await env.uptime.put("state", JSON.stringify(state));
-    await env.uptime.put("lastChecked", new Date().toISOString());
-
-    console.log("state", state);
+  async scheduled(event, env): Promise<void> {
+    await updateUptimeKV({ env });
     console.log(`trigger fired at ${event.cron}`);
   },
 } satisfies ExportedHandler<Env>;
