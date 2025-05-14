@@ -1,0 +1,14 @@
+{
+  "name": "uptime",
+  "version": "1.0.0",
+  "author": "Igor Leahu <igor.leahu24@gmail.com>",
+  "license": "MIT",
+  "description": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "workspaces": [
+    "packages/uptime-worker"
+  ],
+  "devDependencies": {}
+}

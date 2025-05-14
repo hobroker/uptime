@@ -1,0 +1,14 @@
+{
+	"name": "@hobroker/uptime-worker",
+	"version": "0.0.1",
+	"private": true,
+	"scripts": {
+		"deploy": "wrangler deploy",
+		"dev": "wrangler dev --test-scheduled",
+		"prepare": "wrangler types"
+	},
+	"devDependencies": {
+		"typescript": "^5.5.2",
+		"wrangler": "^4.14.4"
+	}
+}
