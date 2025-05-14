@@ -23,7 +23,10 @@ export const getMonitorState = async (
     if (!(monitor.expectedCodes || [200]).includes(response.status)) {
       state.status = "down";
     }
-    if (response.headers.get("cf-access-domain")) {
+    if (
+      response.headers.get("cf-access-domain") ||
+      [401, 403].includes(response.status) // TODO handle `expectedCodes` here, sometimes it may be necessary to expect 401 or 403
+    ) {
       state.protectedByAccess = true;
       state.status = "down";
     }
