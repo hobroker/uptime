@@ -6,7 +6,7 @@ export default {
     url.pathname = "/__scheduled";
     url.searchParams.append("cron", "* * * * *");
     return new Response(
-      `To test the scheduled handler, ensure you have used the "--test-scheduled" then try running "curl ${url.href}".`
+      `To test the scheduled handler, ensure you have used the "--test-scheduled" then try running "curl ${url.href}".`,
     );
   },
 
