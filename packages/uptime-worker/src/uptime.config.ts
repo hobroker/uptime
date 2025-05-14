@@ -19,15 +19,19 @@ export const uptimeWorkerConfig: UptimeWorkerConfig = {
       target: "https://prowlarr.hobroker.me",
     },
     {
+      name: "Tautulli",
+      target: "https://tautulli.hobroker.me",
+    },
+    {
       name: "Code Server",
       target: "https://code.hobroker.me",
     },
     {
-      name: "Qbittorrent",
+      name: "qBittorrent",
       target: "https://qbittorrent.hobroker.me",
     },
     {
-      name: "Demo",
+      name: "http-echos-echo",
       target: "https://demo.hobroker.me",
     },
   ],

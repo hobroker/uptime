@@ -1,9 +1,9 @@
 {
-  "name": "uptime",
-  "version": "1.0.0",
+  "name": "@hobroker/uptime",
+  "version": "0.0.1",
   "author": "Igor Leahu <igor.leahu24@gmail.com>",
   "license": "MIT",
-  "description": "",
+  "description": "Uptime monitoring service",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "husky",
