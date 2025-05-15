@@ -4,9 +4,12 @@
     "lint": {},
     "lint:fix": {},
     "format": {},
+<<<<<<< HEAD
     "cf-typegen": {},
     "ts-check": {},
     "deploy": {},
+=======
+>>>>>>> cc60b26 (add `turbo`)
     "dev": {
       "persistent": true,
       "cache": false
