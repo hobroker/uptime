@@ -5,10 +5,21 @@
   "scripts": {
     "deploy": "wrangler deploy",
     "dev": "wrangler dev --test-scheduled",
-    "prepare": "wrangler types"
+    "prepare": "wrangler types",
+    "format": "prettier --write \"**/*.{ts,mjs,json}\"",
+    "lint": "eslint --fix \"**/*.{ts,mjs,json}\"",
+    "lint:fix": "eslint --fix \"**/*.{ts,mjs,json}\""
   },
   "devDependencies": {
+    "@eslint/js": "^9.26.0",
+    "eslint": "^9.26.0",
+    "eslint-plugin-prettier": "^5.4.0",
+    "eslint-plugin-unused-imports": "^4.1.4",
     "typescript": "^5.5.2",
+    "typescript-eslint": "^8.32.1",
     "wrangler": "^4.14.4"
+  },
+  "dependencies": {
+    "lint-staged": "^16.0.0"
   }
 }
