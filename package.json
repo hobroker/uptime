@@ -10,8 +10,9 @@
     "format": "prettier --write \"**/*.ts\""
   },
   "workspaces": [
-    "packages/uptime-worker"
+    "packages/*"
   ],
+  "dependencies": {},
   "devDependencies": {
     "@eslint/js": "^9.26.0",
     "eslint": "^9.26.0",
