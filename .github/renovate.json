@@ -1,0 +1,12 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommitTypeAll(chore)",
+    "schedule:monthly"
+  ],
+  "assignees": ["hobroker"],
+  "platformAutomerge": false,
+  "separateMajorMinor": false,
+  "separateMultipleMajor": false
+}
