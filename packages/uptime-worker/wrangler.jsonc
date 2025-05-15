@@ -1,0 +1,17 @@
+{
+  "name": "uptime-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-05-05",
+  "observability": {
+    "enabled": true,
+  },
+  "kv_namespaces": [
+    {
+      "binding": "uptime",
+      "id": "0c6ff2a5b9e6439cb855ea16e08bfd58",
+    },
+  ],
+  "triggers": {
+    "crons": ["*/5 * * * *"],
+  },
+}

@@ -1,0 +1,29 @@
+{
+  "name": "@hobroker/uptime",
+  "version": "0.0.1",
+  "author": "Igor Leahu <igor.leahu24@gmail.com>",
+  "license": "MIT",
+  "description": "Uptime monitoring service",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky",
+    "format": "prettier --write \"**/*.ts\""
+  },
+  "workspaces": [
+    "packages/uptime-worker"
+  ],
+  "devDependencies": {
+    "@eslint/js": "^9.26.0",
+    "eslint": "^9.26.0",
+    "eslint-plugin-prettier": "^5.4.0",
+    "eslint-plugin-unused-imports": "^4.1.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.0.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.32.1"
+  },
+  "lint-staged": {
+    "*.{ts}": "prettier --write"
+  }
+}

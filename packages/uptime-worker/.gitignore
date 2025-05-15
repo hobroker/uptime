@@ -1,0 +1,9 @@
+# Dependency directories
+
+node_modules/
+
+# wrangler project
+
+.dev.vars
+.wrangler/
+worker-configuration.d.ts
