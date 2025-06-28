@@ -1,4 +1,4 @@
-import { UptimeWorkerConfig } from "./types";
+import { UptimeWorkerConfig } from "./packages/uptime-worker/src/types";
 
 export const uptimeWorkerConfig: UptimeWorkerConfig = {
   monitors: [
