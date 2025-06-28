@@ -23,10 +23,6 @@ export const uptimeWorkerConfig: UptimeWorkerConfig = {
       target: "https://tautulli.hobroker.me",
     },
     {
-      name: "Code Server",
-      target: "https://code.hobroker.me",
-    },
-    {
       name: "qBittorrent",
       target: "https://qbittorrent.hobroker.me",
     },
