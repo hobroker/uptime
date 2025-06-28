@@ -7,8 +7,8 @@
     "dev": "wrangler dev --test-scheduled",
     "cf-typegen": "wrangler types",
     "format": "prettier --write \"**/*.{ts,mjs,json}\"",
-    "lint": "eslint --fix \"**/*.{ts,mjs,json}\"",
-    "lint:fix": "eslint --fix \"**/*.{ts,mjs,json}\"",
+    "lint": "eslint \"**/*.{ts,mjs,json}\"",
+    "lint:fix": "npm run lint -- --fix",
     "ts-check": "tsc --noEmit"
   },
   "devDependencies": {
