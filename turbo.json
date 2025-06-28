@@ -6,6 +6,7 @@
     "format": {},
     "cf-typegen": {},
     "ts-check": {},
+    "deploy": {},
     "dev": {
       "persistent": true,
       "cache": false

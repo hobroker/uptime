@@ -1,6 +1,6 @@
 import { Monitor, UptimeStateMonitor } from "./types";
 
-export const getMonitorState = async (
+export const getSingleMonitorState = async (
   monitor: Monitor,
   { env }: { env: Cloudflare.Env },
 ) => {

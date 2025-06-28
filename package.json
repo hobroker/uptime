@@ -6,6 +6,7 @@
   "description": "Uptime monitoring service",
   "scripts": {
     "dev": "turbo run dev",
+    "deploy": "turbo run deploy",
     "test": "echo \"Error: no test specified\" && exit 1",
     "cf-typegen": "turbo run cf-typegen",
     "lint": "turbo run lint",

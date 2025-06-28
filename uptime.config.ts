@@ -3,10 +3,6 @@ import { UptimeWorkerConfig } from "./packages/uptime-worker/src/types";
 export const uptimeWorkerConfig: UptimeWorkerConfig = {
   monitors: [
     {
-      name: "Plex",
-      target: "https://plex.hobroker.me",
-    },
-    {
       name: "Sonarr",
       target: "https://sonarr.hobroker.me",
     },
