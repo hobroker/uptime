@@ -20,5 +20,8 @@
     "typescript": "^5.5.2",
     "typescript-eslint": "^8.32.1",
     "wrangler": "^4.14.4"
+  },
+  "dependencies": {
+    "grammy": "^1.36.3"
   }
 }

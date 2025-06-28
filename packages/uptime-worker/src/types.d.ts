@@ -11,7 +11,7 @@ export interface Monitor {
   name: string;
   target: string;
   method?: string; // default GET
-  statusPageLink?: string;
+  statusPageLink?: string; // defaults to target if not provided
   expectedCodes?: number[]; // default [200]
   timeout?: number; // default 10000
 }

@@ -1,4 +1,7 @@
+import { getMonitorsState } from "./getMonitorsState";
+import { uptimeWorkerConfig } from "../../../uptime.config";
 import { updateUptimeKV } from "./updateUptimeKV";
+import { handleNotifications } from "./handleNotifications";
 
 export default {
   async fetch(req) {
@@ -11,7 +14,17 @@ export default {
   },
 
   async scheduled(event, env): Promise<void> {
-    await updateUptimeKV({ env });
+    // Get the current state of all monitors
+    const state = await getMonitorsState(uptimeWorkerConfig, { env });
+
+    console.log("state", state);
+
+    // Update the KV store with the new state
+    await updateUptimeKV(state, { env });
+
+    // Send a Telegram message with the current state and if it was previously down, then notify of the change
+    await handleNotifications(state, { env });
+
     console.log(`trigger fired at ${event.cron}`);
   },
 } satisfies ExportedHandler<Env>;
