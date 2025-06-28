@@ -1,4 +1,4 @@
-import { UptimeWorkerConfig } from "./types";
+import { UptimeWorkerConfig } from "./packages/uptime-worker/src/types";
 
 export const uptimeWorkerConfig: UptimeWorkerConfig = {
   monitors: [
@@ -21,10 +21,6 @@ export const uptimeWorkerConfig: UptimeWorkerConfig = {
     {
       name: "Tautulli",
       target: "https://tautulli.hobroker.me",
-    },
-    {
-      name: "Code Server",
-      target: "https://code.hobroker.me",
     },
     {
       name: "qBittorrent",

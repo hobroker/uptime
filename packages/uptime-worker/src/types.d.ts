@@ -9,7 +9,6 @@ export type UptimeState = UptimeStateMonitor[];
 
 export interface Monitor {
   name: string;
-  tooltip?: string;
   target: string;
   method?: string; // default GET
   statusPageLink?: string;

@@ -1,6 +1,6 @@
 import { getMonitorState } from "./getMonitorState";
 import { UptimeState } from "./types";
-import { uptimeWorkerConfig } from "./uptime.config";
+import { uptimeWorkerConfig } from "../../../uptime.config";
 
 export const updateUptimeKV = async ({ env }: { env: Cloudflare.Env }) => {
   const state: UptimeState = [];

@@ -14,4 +14,8 @@
   "triggers": {
     "crons": ["*/5 * * * *"],
   },
+  "vars": {
+    "CF_ACCESS_CLIENT_ID": "",
+    "CF_ACCESS_CLIENT_SECRET": "",
+  },
 }
