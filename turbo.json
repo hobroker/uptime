@@ -6,7 +6,9 @@
     "format": {},
     "cf-typegen": {},
     "ts-check": {},
-    "deploy": {},
+    "deploy": {
+      "env": ["CLOUDFLARE_API_TOKEN"]
+    },
     "dev": {
       "persistent": true,
       "cache": false
