@@ -14,10 +14,4 @@
   "triggers": {
     "crons": ["*/10 * * * *"],
   },
-  "vars": {
-    "CF_ACCESS_CLIENT_ID": "",
-    "CF_ACCESS_CLIENT_SECRET": "",
-    "TELEGRAM_BOT_TOKEN": "",
-    "TELEGRAM_CHAT_ID": "",
-  },
 }

@@ -1,4 +1,5 @@
 import { Bot } from "grammy";
+import { ApiMethods } from "grammy/types";
 
 export class TelegramService {
   private bot: Bot;
@@ -14,17 +15,14 @@ export class TelegramService {
   }: {
     chatId: string | number; // Can be a string (for channel usernames) or a number (for user IDs)
     message: string;
-    options?: {
-      replyToMessageId?: number; // Optional, for replying to a specific message
-    };
+    options?: Pick<
+      Parameters<ApiMethods["sendMessage"]>[0],
+      "reply_parameters"
+    >;
   }) {
     return this.bot.api.sendMessage(chatId, message, {
       parse_mode: "Markdown",
-      ...(options?.replyToMessageId && {
-        reply_parameters: {
-          message_id: options?.replyToMessageId,
-        },
-      }),
+      ...options,
     });
   }
 }

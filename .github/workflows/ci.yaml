@@ -14,7 +14,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Generate types
-        run: npm run cf-typegen
+        run: |
+          # Create .dev.vars file with environment variables for development
+          echo "# Environment variables for development
+          CF_ACCESS_CLIENT_ID=
+          CF_ACCESS_CLIENT_SECRET=
+          TELEGRAM_BOT_TOKEN=
+          TELEGRAM_CHAT_ID=" > packages/uptime-worker/.dev.vars
+
+          # Generate Cloudflare types
+          npm run cf-typegen
       - name: Run Linter
         run: npm run lint
       - name: Run TypeScript Check
