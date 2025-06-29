@@ -29,7 +29,9 @@ export const handleNotifications = async (
       chatId: env.TELEGRAM_CHAT_ID,
       message: `✅ All monitors are up and running!`,
       options: {
-        replyToMessageId: parseInt(lastNotificationOfDowntime, 10),
+        reply_parameters: {
+          message_id: parseInt(lastNotificationOfDowntime, 10),
+        },
       },
     });
     console.log("All monitors are up, sent notification about recovery");
