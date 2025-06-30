@@ -9,15 +9,21 @@ export const getSingleMonitorState = async (
     name: monitor.name,
     target: monitor.target,
     status: "up",
-    protectedByAccess: false,
+    protectedByZeroTrust: false,
   };
 
   try {
     const response = await fetch(monitor.statusPageLink || monitor.target, {
       method: monitor.method || "GET",
+      body: monitor.body,
       headers: {
-        "CF-Access-Client-Id": env.CF_ACCESS_CLIENT_ID,
-        "CF-Access-Client-Secret": env.CF_ACCESS_CLIENT_SECRET,
+        ...monitor.headers,
+        ...(monitor.protectedByZeroTrust
+          ? {
+              "CF-Access-Client-Id": env.CF_ACCESS_CLIENT_ID,
+              "CF-Access-Client-Secret": env.CF_ACCESS_CLIENT_SECRET,
+            }
+          : {}),
       },
       signal: AbortSignal.timeout(monitor.timeout || 5000),
     });
@@ -28,7 +34,7 @@ export const getSingleMonitorState = async (
       response.headers.get("cf-access-domain") ||
       [401, 403].includes(response.status) // TODO handle `expectedCodes` here, sometimes it may be necessary to expect 401 or 403
     ) {
-      state.protectedByAccess = true;
+      state.protectedByZeroTrust = true;
       state.status = "down";
     }
     return state;

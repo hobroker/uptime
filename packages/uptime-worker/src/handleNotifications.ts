@@ -52,9 +52,9 @@ export const handleNotifications = async (
       state
         .filter(({ status }) => status === "down")
         .map(
-          ({ name, target, protectedByAccess }) =>
+          ({ name, target, protectedByZeroTrust }) =>
             `*${name}* (${target})${
-              protectedByAccess ? ": (protected by access)" : ""
+              protectedByZeroTrust ? ": (protected by Zero Trust)" : ""
             }`,
         )
         .join("\n"),
