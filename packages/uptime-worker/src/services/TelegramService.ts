@@ -17,11 +17,12 @@ export class TelegramService {
     message: string;
     options?: Pick<
       Parameters<ApiMethods["sendMessage"]>[0],
-      "reply_parameters"
+      "reply_parameters" | "disable_notification"
     >;
   }) {
     return this.bot.api.sendMessage(chatId, message, {
       parse_mode: "Markdown",
+      disable_notification: true,
       ...options,
     });
   }
