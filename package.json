@@ -1,6 +1,6 @@
 {
   "name": "@hobroker/uptime",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "author": "Igor Leahu <igor.leahu24@gmail.com>",
   "license": "MIT",
   "description": "Uptime monitoring service",
