@@ -1,5 +1,5 @@
 import { getSingleMonitorState } from "./getSingleMonitorState";
-import { Env, UptimeState, UptimeWorkerConfig } from "../types";
+import { UptimeState, UptimeWorkerConfig } from "../types";
 
 export const getMonitorsState = async (
   config: UptimeWorkerConfig,

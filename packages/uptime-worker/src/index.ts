@@ -1,9 +1,8 @@
 import { getMonitorsState } from "./monitors/getMonitorsState";
-import { uptimeWorkerConfig } from "../../../uptime.config";
 import { handleNotifications } from "./notifications/handleNotifications";
 import { syncStatuspage } from "./statuspage/syncStatuspage";
 import { updateUptimeKV } from "./storage/updateUptimeKV";
-import type { Env } from "./types";
+import { uptimeWorkerConfig } from "../../../uptime.config";
 
 export default {
   async fetch(req: Request) {

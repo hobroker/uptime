@@ -1,5 +1,5 @@
 import { StatuspageService } from "../services/StatuspageService";
-import type { Env, UptimeState } from "../types";
+import type { UptimeState } from "../types";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 

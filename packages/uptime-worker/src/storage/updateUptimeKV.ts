@@ -1,4 +1,4 @@
-import { Env, UptimeState } from "../types";
+import { UptimeState } from "../types";
 
 export const updateUptimeKV = async (
   state: UptimeState,

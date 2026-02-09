@@ -9,10 +9,9 @@
     "format": "prettier --write \"**/*.{ts,mjs,json}\"",
     "lint": "eslint \"**/*.{ts,mjs,json}\"",
     "lint:fix": "npm run lint -- --fix",
-    "ts-check": "tsc --noEmit"
+    "ts-check": "wrangler types && tsc --noEmit"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260207.0",
     "@eslint/js": "^v9.39.2",
     "eslint": "^v9.39.2",
     "eslint-config-prettier": "^10.1.8",

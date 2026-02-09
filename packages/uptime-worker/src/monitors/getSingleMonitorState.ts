@@ -1,4 +1,4 @@
-import { Env, Monitor, UptimeStateMonitor } from "../types";
+import { Monitor, UptimeStateMonitor } from "../types";
 
 export const getSingleMonitorState = async (
   monitor: Monitor,
