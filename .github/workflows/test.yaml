@@ -1,12 +1,9 @@
-name: Deploy Worker
+name: Test
 
-on:
-  push:
-    branches:
-      - master
+on: [push]
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6.0.2
@@ -16,7 +13,5 @@ jobs:
           node-version: 24
       - name: Install dependencies
         run: npm ci
-      - name: Deploy Worker
-        run: npm run deploy
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      - name: Run tests
+        run: npm test

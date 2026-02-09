@@ -13,7 +13,7 @@ const isHttpUrl = (value: string) => {
   }
 };
 
-const buildDowntimeMessage = (state: UptimeState) => {
+export const buildDowntimeMessage = (state: UptimeState) => {
   let msg = new FormattedString("");
   msg = msg.link("⚠️ Some monitors are down ⚠️", STATUSPAGE_URL);
   msg = msg.plain("\n\n");
