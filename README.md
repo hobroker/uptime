@@ -1,10 +1,10 @@
-# Uptime - Website Monitoring with Cloudflare Workers
+# Uptime - Scheduled Uptime Monitoring on Cloudflare Workers
 
 [![CI](https://github.com/hobroker/uptime/actions/workflows/ci.yaml/badge.svg)](https://github.com/hobroker/uptime/actions/workflows/ci.yaml) [![Deploy Worker](https://github.com/hobroker/uptime/actions/workflows/deploy.yaml/badge.svg)](https://github.com/hobroker/uptime/actions/workflows/deploy.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Made with TypeScript](https://img.shields.io/badge/Made%20with-TypeScript-blue)](https://www.typescriptlang.org/)
 
-**Uptime** is a lightweight, serverless monitoring tool built on **Cloudflare Workers** to keep track of your websites' availability. It monitors a configurable list of websites and sends **Telegram** alerts when issues arise—keeping you informed of your services' status at all times.
+**Uptime** is a lightweight, serverless monitoring service built on **Cloudflare Workers**. It runs on a cron schedule, checks a configurable list of endpoints, stores the latest state in **Workers KV**, and sends **Telegram** alerts on downtime and recovery. Optionally, it can sync component status to **Statuspage.io**.
 
 ## Table of Contents
 
@@ -25,18 +25,20 @@
 
 ## Features
 
-- 🔍 **Active Monitoring**: Periodically checks the availability of configured websites.
-- ⚡ **Serverless**: Runs on Cloudflare Workers with minimal latency and no infrastructure overhead.
-- 🔔 **Instant Alerts**: Sends alerts via Telegram when a monitor fails or recovers.
-- 🔐 **Zero Trust Support**: Works with sites behind Cloudflare Zero Trust via client credentials.
+- **Active Monitoring**: Periodically checks the availability of configured websites.
+- **Serverless**: Runs on Cloudflare Workers with minimal infrastructure overhead.
+- **Telegram Alerts**: Sends a single downtime alert per incident and a recovery message when all monitors are healthy again.
+- **Statuspage Sync (Optional)**: Maps each monitor to a Statuspage component and updates its status.
+- **Zero Trust Support**: Works with sites behind Cloudflare Zero Trust via client credentials.
 
 ## How It Works
 
-1. Configure a list of websites to monitor in the project settings.
-2. Uptime periodically checks the availability of each website.
-3. If at least one website monitor fails, a notification is sent via Telegram.
-4. No further failure notifications are sent for the same incident to avoid spam.
-5. Once all monitors report a healthy status, a recovery message is sent via Telegram.
+1. Configure a list of monitors in `uptime.config.ts`.
+2. A scheduled Cloudflare Worker runs on a cron defined in `packages/uptime-worker/wrangler.jsonc`.
+3. Each monitor is checked; results are stored in Workers KV (state + last-checked timestamp).
+4. If any monitor is down, a single Telegram alert is sent and subsequent alerts are suppressed for that incident.
+5. When all monitors recover, a Telegram recovery message is sent.
+6. If Statuspage.io credentials are configured, each monitor is synced to a Statuspage component.
 
 ## Tech Stack
 
@@ -44,7 +46,8 @@
 - [Workers KV](https://developers.cloudflare.com/workers/runtime-apis/kv/)
 - [Wrangler](https://developers.cloudflare.com/workers/wrangler/) for development and deployment
 - [TypeScript](https://www.typescriptlang.org/)
-- [Telegram Bot API](https://core.telegram.org/bots/api)
+- [Telegram Bot API](https://core.telegram.org/bots/api) (via [grammy](https://grammy.dev/))
+- [Statuspage API](https://developer.statuspage.io/) (optional)
 - GitHub Actions (optional deployment)
 
 ## Getting Started
@@ -78,7 +81,13 @@
    npx wrangler secret put TELEGRAM_BOT_TOKEN
    npx wrangler secret put TELEGRAM_CHAT_ID
    ```
-3. Optionally, set up Cloudflare Zero Trust if your websites are protected by it.
+3. Optional: Configure Statuspage.io sync if you want component updates.
+   ```shell
+   cd packages/uptime-worker/
+   npx wrangler secret put STATUSPAGE_IO_API_KEY
+   npx wrangler secret put STATUSPAGE_IO_PAGE_ID
+   ```
+4. Optionally, set up Cloudflare Zero Trust if your websites are protected by it.
    ```shell
    cd packages/uptime-worker/
    npx wrangler secret put CF_ACCESS_CLIENT_ID
@@ -103,10 +112,10 @@
        {
          name: "Example Site",
          target: "https://example.com",
-         statusPageLink: "https://status.example.com", // Optional: Link to a status page, defaults to the target URL
-         expectedCodes: [200], // Optional: Expected HTTP status codes, defaults to [200]
-         timeout: 5000, // Optional: Request timeout in milliseconds, defaults to 5000 ms
-         protectedByZeroTrust: false, // Optional: Set to true if the site is protected by Cloudflare Zero Trust
+         statusPageLink: "https://status.example.com", // Optional: URL to probe (defaults to target)
+         expectedCodes: [200], // Optional: Expected HTTP status codes (defaults to [200])
+         timeout: 5000, // Optional: Request timeout in ms (defaults to 5000)
+         protectedByZeroTrust: false, // Optional: Use CF Access client headers
          headers: {}, // Optional: Additional headers to send with the request
          body: undefined, // Optional: Body to send with the request (for POST or PUT requests)
        },
@@ -164,7 +173,7 @@ To enable automatic deployments from GitHub Actions, you'll need to set up a Clo
 
 ## Usage
 
-Once deployed, Uptime will automatically start monitoring the configured websites and send notifications to Telegram based on the status of the monitors.
+Once deployed, Uptime will automatically run on the configured cron schedule, check the monitors in `uptime.config.ts`, and send Telegram notifications based on state changes.
 
 ### Example Telegram message
 
