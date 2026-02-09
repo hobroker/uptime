@@ -4,9 +4,20 @@ import { UptimeState } from "../types";
 
 const STATUSPAGE_URL = "https://hobroker.statuspage.io/";
 
+const isHttpUrl = (value: string) => {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
 const buildDowntimeMessage = (state: UptimeState) => {
   let msg = new FormattedString("⚠️ Some monitors are down ⚠️\n");
-  msg = msg.plain("Status page: ").link(STATUSPAGE_URL, STATUSPAGE_URL);
+  msg = msg
+    .plain("Status page: ")
+    .link("hobroker.statuspage.io", STATUSPAGE_URL);
   msg = msg.plain("\n\n");
 
   const down = state.filter(({ status }) => status === "down");
@@ -14,10 +25,15 @@ const buildDowntimeMessage = (state: UptimeState) => {
   down.forEach(({ name, target, protectedByZeroTrust }, i) => {
     if (i > 0) msg = msg.plain("\n");
 
+    msg = msg.b(name).plain(" (");
+
+    if (isHttpUrl(target)) {
+      msg = msg.link(target, target);
+    } else {
+      msg = msg.plain(target);
+    }
+
     msg = msg
-      .b(name)
-      .plain(" (")
-      .plain(target)
       .plain(")")
       .plain(protectedByZeroTrust ? ": (protected by Zero Trust)" : "");
   });
@@ -54,7 +70,7 @@ export const handleNotifications = async (
       "✅ All monitors are up and running!\n",
     )
       .plain("Status page: ")
-      .link(STATUSPAGE_URL, STATUSPAGE_URL);
+      .link("hobroker.statuspage.io", STATUSPAGE_URL);
 
     await telegramService.sendMessage({
       chatId: env.TELEGRAM_CHAT_ID,
