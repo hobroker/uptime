@@ -67,4 +67,57 @@ export const syncStatuspage = async (
       await sleep(1100);
     }
   }
+
+  // --- Incident management ---
+  const downMonitors = state.filter((m) => m.status === "down");
+  const activeIncidentId = await env.uptime.get("statuspageIncidentId");
+
+  if (downMonitors.length > 0) {
+    // Build component ID -> status mapping for affected components
+    const affectedComponents: Record<string, "major_outage"> = {};
+    const affectedNames: string[] = [];
+    for (const m of downMonitors) {
+      const comp = byName.get(m.name);
+      if (comp) {
+        affectedComponents[comp.id] = "major_outage";
+        affectedNames.push(m.name);
+      }
+    }
+
+    const body = `Affected services: ${affectedNames.join(", ")}`;
+
+    if (!activeIncidentId) {
+      console.log("Statuspage: creating incident for down monitors");
+      await sleep(1100);
+      const incident = await statuspage.createIncident({
+        name: "Service disruption",
+        status: "investigating",
+        body,
+        components: affectedComponents,
+      });
+      await env.uptime.put("statuspageIncidentId", incident.id);
+    } else {
+      console.log("Statuspage: updating existing incident with current state");
+      await sleep(1100);
+      await statuspage.updateIncident(activeIncidentId, {
+        body,
+        components: affectedComponents,
+      });
+    }
+  } else if (activeIncidentId) {
+    // All monitors are up — resolve the incident
+    const operationalComponents: Record<string, "operational"> = {};
+    for (const [, comp] of byName) {
+      operationalComponents[comp.id] = "operational";
+    }
+
+    console.log("Statuspage: resolving incident, all monitors are up");
+    await sleep(1100);
+    await statuspage.updateIncident(activeIncidentId, {
+      status: "resolved",
+      body: "All services have recovered.",
+      components: operationalComponents,
+    });
+    await env.uptime.delete("statuspageIncidentId");
+  }
 };

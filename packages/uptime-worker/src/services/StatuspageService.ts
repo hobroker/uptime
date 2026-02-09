@@ -1,14 +1,28 @@
-type StatuspageComponentStatus =
+export type StatuspageComponentStatus =
   | "operational"
   | "degraded_performance"
   | "partial_outage"
   | "major_outage"
   | "under_maintenance";
 
-interface StatuspageComponent {
+export interface StatuspageComponent {
   id: string;
   name: string;
   status: StatuspageComponentStatus;
+}
+
+export type StatuspageIncidentStatus =
+  | "investigating"
+  | "identified"
+  | "monitoring"
+  | "resolved"
+  | "postmortem";
+
+export interface StatuspageIncident {
+  id: string;
+  name: string;
+  status: StatuspageIncidentStatus;
+  components: StatuspageComponent[];
 }
 
 export class StatuspageService {
@@ -95,6 +109,67 @@ export class StatuspageService {
         json: {
           component: {
             status,
+          },
+        },
+      },
+    );
+  }
+
+  async listUnresolvedIncidents(): Promise<StatuspageIncident[]> {
+    return this.request<StatuspageIncident[]>(
+      `/pages/${this.pageId}/incidents/unresolved.json`,
+      { method: "GET" },
+    );
+  }
+
+  async createIncident({
+    name,
+    status,
+    body,
+    components,
+  }: {
+    name: string;
+    status: StatuspageIncidentStatus;
+    body?: string;
+    components?: Record<string, StatuspageComponentStatus>;
+  }): Promise<StatuspageIncident> {
+    return this.request<StatuspageIncident>(
+      `/pages/${this.pageId}/incidents.json`,
+      {
+        method: "POST",
+        json: {
+          incident: {
+            name,
+            status,
+            body,
+            components,
+          },
+        },
+      },
+    );
+  }
+
+  async updateIncident(
+    incidentId: string,
+    {
+      status,
+      body,
+      components,
+    }: {
+      status?: StatuspageIncidentStatus;
+      body?: string;
+      components?: Record<string, StatuspageComponentStatus>;
+    },
+  ): Promise<StatuspageIncident> {
+    return this.request<StatuspageIncident>(
+      `/pages/${this.pageId}/incidents/${incidentId}.json`,
+      {
+        method: "PATCH",
+        json: {
+          incident: {
+            status,
+            body,
+            components,
           },
         },
       },
