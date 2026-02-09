@@ -1,14 +1,15 @@
 // @ts-check
 
 import eslint from "@eslint/js";
+import { defineConfig } from "eslint/config";
 import tseslint from "typescript-eslint";
-import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
+import eslintConfigPrettier from "eslint-config-prettier";
 import unusedImports from "eslint-plugin-unused-imports";
 
-export default tseslint.config(
+export default defineConfig(
   eslint.configs.recommended,
-  eslintPluginPrettierRecommended,
-  tseslint.configs.recommended,
+  tseslint.configs.stylistic,
+  eslintConfigPrettier,
   {
     plugins: {
       "unused-imports": unusedImports,
