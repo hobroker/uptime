@@ -12,16 +12,16 @@
     "ts-check": "tsc --noEmit"
   },
   "devDependencies": {
-    "@eslint/js": "^9.26.0",
-    "eslint": "^9.26.0",
-    "eslint-plugin-prettier": "^5.4.0",
-    "eslint-plugin-unused-imports": "^4.1.4",
-    "lint-staged": "^16.1.2",
-    "typescript": "^5.5.2",
-    "typescript-eslint": "^8.32.1",
-    "wrangler": "^4.14.4"
+    "@eslint/js": "^v9.39.2",
+    "eslint": "^v9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-unused-imports": "^4.4.1",
+    "lint-staged": "^16.2.7",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.54.0",
+    "wrangler": "^4.63.0"
   },
   "dependencies": {
-    "grammy": "^1.36.3"
+    "grammy": "^1.39.3"
   }
 }
