@@ -1,9 +1,9 @@
-import { TelegramService } from "./services/TelegramService";
-import { UptimeState } from "./types";
+import { TelegramService } from "../services/TelegramService";
+import { Env, UptimeState } from "../types";
 
 export const handleNotifications = async (
   state: UptimeState,
-  { env }: { env: Cloudflare.Env },
+  { env }: { env: Env },
 ) => {
   const telegramService = new TelegramService({
     token: env.TELEGRAM_BOT_TOKEN,

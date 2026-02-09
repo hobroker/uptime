@@ -1,8 +1,8 @@
-import { Monitor, UptimeStateMonitor } from "./types";
+import { Env, Monitor, UptimeStateMonitor } from "../types";
 
 export const getSingleMonitorState = async (
   monitor: Monitor,
-  { env }: { env: Cloudflare.Env },
+  { env }: { env: Env },
 ) => {
   console.log(`Checking ${monitor.name}...`);
   const state: UptimeStateMonitor = {

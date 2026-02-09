@@ -1,9 +1,9 @@
 import { getSingleMonitorState } from "./getSingleMonitorState";
-import { UptimeState, UptimeWorkerConfig } from "./types";
+import { Env, UptimeState, UptimeWorkerConfig } from "../types";
 
 export const getMonitorsState = async (
   config: UptimeWorkerConfig,
-  { env }: { env: Cloudflare.Env },
+  { env }: { env: Env },
 ) => {
   const state: UptimeState = [];
   for (const monitor of config.monitors) {
