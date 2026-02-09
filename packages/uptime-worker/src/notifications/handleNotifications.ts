@@ -2,8 +2,12 @@ import { FormattedString } from "@grammyjs/parse-mode";
 import { TelegramService } from "../services/TelegramService";
 import { UptimeState } from "../types";
 
+const STATUSPAGE_URL = "https://hobroker.statuspage.io/";
+
 const buildDowntimeMessage = (state: UptimeState) => {
-  let msg = new FormattedString("⚠️ Some monitors are down ⚠️\n\n");
+  let msg = new FormattedString("⚠️ Some monitors are down ⚠️\n");
+  msg = msg.plain("Status page: ").link(STATUSPAGE_URL, STATUSPAGE_URL);
+  msg = msg.plain("\n\n");
 
   const down = state.filter(({ status }) => status === "down");
 
@@ -46,9 +50,15 @@ export const handleNotifications = async (
 
     // we notified about downtime, but now all monitors are up
     // so we can send a message that everything is back to normal
+    const recoveryMessage = new FormattedString(
+      "✅ All monitors are up and running!\n",
+    )
+      .plain("Status page: ")
+      .link(STATUSPAGE_URL, STATUSPAGE_URL);
+
     await telegramService.sendMessage({
       chatId: env.TELEGRAM_CHAT_ID,
-      message: "✅ All monitors are up and running!",
+      message: recoveryMessage,
       options: {
         reply_parameters: {
           message_id: parseInt(lastNotificationOfDowntime, 10),
