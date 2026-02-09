@@ -6,6 +6,7 @@ export interface Env {
   TELEGRAM_CHAT_ID: string;
   CF_ACCESS_CLIENT_ID: string;
   CF_ACCESS_CLIENT_SECRET: string;
+  STATUSPAGE_IO_API_KEY: string;
 }
 
 interface UptimeStateMonitor {
