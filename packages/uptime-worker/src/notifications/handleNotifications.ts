@@ -3,14 +3,14 @@ import { TelegramService } from "../services/TelegramService";
 import { UptimeState } from "../types";
 
 const buildDowntimeMessage = (state: UptimeState) => {
-  const lines = new FormattedString("⚠️ Some monitors are down ⚠️\n\n");
+  let msg = new FormattedString("⚠️ Some monitors are down ⚠️\n\n");
 
   const down = state.filter(({ status }) => status === "down");
 
   down.forEach(({ name, target, protectedByZeroTrust }, i) => {
-    if (i > 0) lines.plain("\n");
+    if (i > 0) msg = msg.plain("\n");
 
-    lines
+    msg = msg
       .b(name)
       .plain(" (")
       .plain(target)
@@ -18,7 +18,7 @@ const buildDowntimeMessage = (state: UptimeState) => {
       .plain(protectedByZeroTrust ? ": (protected by Zero Trust)" : "");
   });
 
-  return lines;
+  return msg;
 };
 
 export const handleNotifications = async (
