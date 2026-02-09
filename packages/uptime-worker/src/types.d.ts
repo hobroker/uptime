@@ -1,13 +1,3 @@
-// Cloudflare Worker environment bindings
-// Keep this minimal and aligned with wrangler.jsonc and your secret vars.
-export interface Env {
-  uptime: KVNamespace;
-  TELEGRAM_BOT_TOKEN: string;
-  TELEGRAM_CHAT_ID: string;
-  CF_ACCESS_CLIENT_ID: string;
-  CF_ACCESS_CLIENT_SECRET: string;
-}
-
 interface UptimeStateMonitor {
   name: string;
   target: string;

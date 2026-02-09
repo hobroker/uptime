@@ -1,8 +1,8 @@
 import { getMonitorsState } from "./monitors/getMonitorsState";
-import { uptimeWorkerConfig } from "../../../uptime.config";
 import { handleNotifications } from "./notifications/handleNotifications";
+import { syncStatuspage } from "./statuspage/syncStatuspage";
 import { updateUptimeKV } from "./storage/updateUptimeKV";
-import type { Env } from "./types";
+import { uptimeWorkerConfig } from "../../../uptime.config";
 
 export default {
   async fetch(req: Request) {
@@ -26,6 +26,9 @@ export default {
 
     // Update the KV store with the new state
     await updateUptimeKV(state, { env });
+
+    // Sync component statuses to Statuspage (if configured)
+    await syncStatuspage(state, { env });
 
     // Send a Telegram message with the current state and if it was previously down, then notify of the change
     await handleNotifications(state, { env });

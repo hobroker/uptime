@@ -9,7 +9,7 @@
     "format": "prettier --write \"**/*.{ts,mjs,json}\"",
     "lint": "eslint \"**/*.{ts,mjs,json}\"",
     "lint:fix": "npm run lint -- --fix",
-    "ts-check": "tsc --noEmit"
+    "ts-check": "wrangler types && tsc --noEmit"
   },
   "devDependencies": {
     "@eslint/js": "^v9.39.2",
