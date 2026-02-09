@@ -12,6 +12,7 @@
     "ts-check": "tsc --noEmit"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260207.0",
     "@eslint/js": "^v9.39.2",
     "eslint": "^v9.39.2",
     "eslint-config-prettier": "^10.1.8",

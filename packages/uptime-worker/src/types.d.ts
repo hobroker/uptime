@@ -7,6 +7,7 @@ export interface Env {
   CF_ACCESS_CLIENT_ID: string;
   CF_ACCESS_CLIENT_SECRET: string;
   STATUSPAGE_IO_API_KEY: string;
+  STATUSPAGE_IO_PAGE_ID: string;
 }
 
 interface UptimeStateMonitor {
