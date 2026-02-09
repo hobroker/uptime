@@ -1,10 +1,11 @@
-import { getMonitorsState } from "./getMonitorsState";
+import { getMonitorsState } from "./monitors/getMonitorsState";
 import { uptimeWorkerConfig } from "../../../uptime.config";
-import { updateUptimeKV } from "./updateUptimeKV";
-import { handleNotifications } from "./handleNotifications";
+import { handleNotifications } from "./notifications/handleNotifications";
+import { updateUptimeKV } from "./storage/updateUptimeKV";
+import type { Env } from "./types";
 
 export default {
-  async fetch(req) {
+  async fetch(req: Request) {
     const url = new URL(req.url);
     url.pathname = "/__scheduled";
     url.searchParams.append("cron", "* * * * *");
@@ -13,7 +14,11 @@ export default {
     );
   },
 
-  async scheduled(event, env): Promise<void> {
+  async scheduled(
+    controller: ScheduledController,
+    env: Env,
+    ctx: ExecutionContext,
+  ): Promise<void> {
     // Get the current state of all monitors
     const state = await getMonitorsState(uptimeWorkerConfig, { env });
 
@@ -25,6 +30,8 @@ export default {
     // Send a Telegram message with the current state and if it was previously down, then notify of the change
     await handleNotifications(state, { env });
 
-    console.log(`trigger fired at ${event.cron}`);
+    // Keep the cron string for debugging; controller.cron is provided by Workers runtime
+    console.log(`trigger fired at ${controller.cron}`);
+    ctx.waitUntil(Promise.resolve());
   },
 } satisfies ExportedHandler<Env>;
