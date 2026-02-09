@@ -1,5 +1,25 @@
+import { FormattedString } from "@grammyjs/parse-mode";
 import { TelegramService } from "../services/TelegramService";
 import { UptimeState } from "../types";
+
+const buildDowntimeMessage = (state: UptimeState) => {
+  const lines = new FormattedString("⚠️ Some monitors are down ⚠️\n\n");
+
+  const down = state.filter(({ status }) => status === "down");
+
+  down.forEach(({ name, target, protectedByZeroTrust }, i) => {
+    if (i > 0) lines.plain("\n");
+
+    lines
+      .b(name)
+      .plain(" (")
+      .plain(target)
+      .plain(")")
+      .plain(protectedByZeroTrust ? ": (protected by Zero Trust)" : "");
+  });
+
+  return lines;
+};
 
 export const handleNotifications = async (
   state: UptimeState,
@@ -8,6 +28,7 @@ export const handleNotifications = async (
   const telegramService = new TelegramService({
     token: env.TELEGRAM_BOT_TOKEN,
   });
+
   const lastNotificationOfDowntime = await env.uptime.get(
     "lastNotificationOfDowntime",
   );
@@ -27,15 +48,15 @@ export const handleNotifications = async (
     // so we can send a message that everything is back to normal
     await telegramService.sendMessage({
       chatId: env.TELEGRAM_CHAT_ID,
-      message: `✅ All monitors are up and running!`,
+      message: "✅ All monitors are up and running!",
       options: {
         reply_parameters: {
           message_id: parseInt(lastNotificationOfDowntime, 10),
         },
       },
     });
-    console.log("All monitors are up, sent notification about recovery");
 
+    console.log("All monitors are up, sent notification about recovery");
     return;
   }
 
@@ -44,21 +65,14 @@ export const handleNotifications = async (
     console.log("No monitors are down, skipping notification");
     return;
   }
+
   // no previous notification, so we can send a message if at least one monitor is down
+  const formatted = buildDowntimeMessage(state);
   const message = await telegramService.sendMessage({
     chatId: env.TELEGRAM_CHAT_ID,
-    message:
-      `⚠️ Some monitors are down ⚠️\n\n` +
-      state
-        .filter(({ status }) => status === "down")
-        .map(
-          ({ name, target, protectedByZeroTrust }) =>
-            `*${name}* (${target})${
-              protectedByZeroTrust ? ": (protected by Zero Trust)" : ""
-            }`,
-        )
-        .join("\n"),
+    message: formatted,
   });
+
   await env.uptime.put(
     "lastNotificationOfDowntime",
     message.message_id.toString(),

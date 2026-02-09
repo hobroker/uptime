@@ -1,5 +1,11 @@
 import { Bot } from "grammy";
 import { ApiMethods } from "grammy/types";
+import type { FormattedString } from "@grammyjs/parse-mode";
+
+type SendMessageOptions = Pick<
+  Parameters<ApiMethods["sendMessage"]>[0],
+  "reply_parameters" | "disable_notification"
+>;
 
 export class TelegramService {
   private bot: Bot;
@@ -13,15 +19,22 @@ export class TelegramService {
     message,
     options,
   }: {
-    chatId: string | number; // Can be a string (for channel usernames) or a number (for user IDs)
-    message: string;
-    options?: Pick<
-      Parameters<ApiMethods["sendMessage"]>[0],
-      "reply_parameters" | "disable_notification"
-    >;
+    chatId: string | number;
+    message: string | FormattedString;
+    options?: SendMessageOptions;
   }) {
-    return this.bot.api.sendMessage(chatId, message, {
-      parse_mode: "Markdown",
+    // Use entity-based formatting when a FormattedString is provided.
+    // This avoids fragile Markdown escaping issues (monitor names, URLs, etc.).
+    if (typeof message === "string") {
+      return this.bot.api.sendMessage(chatId, message, {
+        // no parse_mode: plain text
+        disable_notification: true,
+        ...options,
+      });
+    }
+
+    return this.bot.api.sendMessage(chatId, message.text, {
+      entities: message.entities,
       disable_notification: true,
       ...options,
     });
