@@ -28,6 +28,21 @@ export const uptimeWorkerConfig: UptimeWorkerConfig = {
       protectedByZeroTrust: true,
     },
     {
+      name: "VS Code",
+      target: "https://code.hobroker.me",
+      protectedByZeroTrust: true,
+    },
+    {
+      name: "Syncthing",
+      target: "https://syncthing.hobroker.me",
+      protectedByZeroTrust: true,
+    },
+    {
+      name: "n8n",
+      target: "https://n8n.hobroker.me",
+      protectedByZeroTrust: true,
+    },
+    {
       name: "http-echos-echo",
       target: "https://demo.hobroker.me",
       protectedByZeroTrust: true,
