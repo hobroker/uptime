@@ -3,7 +3,7 @@ import { NotificationService } from "./notifications/NotificationService";
 import { StatuspageChannel } from "./notifications/channels/statuspage/StatuspageChannel";
 import { TelegramChannel } from "./notifications/channels/telegram/TelegramChannel";
 import { updateUptimeKV } from "./storage/updateUptimeKV";
-import { uptimeWorkerConfig } from "../../../uptime.config";
+import { uptimeWorkerConfig } from "../uptime.config";
 
 const notificationService = new NotificationService([
   new StatuspageChannel(),

@@ -4,11 +4,14 @@ import {
 } from "./services";
 import type { UptimeState } from "../../../types";
 import { sleep } from "../../../util/sleep";
+import { ComponentStatus, MonitorStatus } from "../../../constants";
 
 const mapMonitorStatusToComponent = (
   status: "up" | "down",
-): "operational" | "major_outage" => {
-  return status === "up" ? "operational" : "major_outage";
+): ComponentStatus => {
+  return status === MonitorStatus.Up
+    ? ComponentStatus.Operational
+    : ComponentStatus.MajorOutage;
 };
 
 /**
@@ -37,6 +40,9 @@ export const syncComponents = async ({
         status: desired,
       });
       byName.set(component.name, component);
+      // Statuspage API has a rate limit of ~1 req/s, so we sleep to avoid hitting it.
+      // TODO: Implement a better rate limiting strategy (e.g. p-limit or a proper queue)
+      // if the number of monitors grows significantly.
       await sleep(1100);
       continue;
     }

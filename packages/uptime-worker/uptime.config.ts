@@ -1,6 +1,7 @@
-import { UptimeWorkerConfig } from "./packages/uptime-worker/src/types";
+import { UptimeWorkerConfig } from "./src/types";
 
 export const uptimeWorkerConfig: UptimeWorkerConfig = {
+  statuspageUrl: "https://hobroker.statuspage.io",
   monitors: [
     {
       name: "Rancher",

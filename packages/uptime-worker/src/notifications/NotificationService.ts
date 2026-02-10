@@ -15,7 +15,7 @@ export class NotificationService {
     for (const [i, result] of results.entries()) {
       if (result.status === "rejected") {
         console.error(
-          `Notification channel "${this.channels[i].name}" failed:`,
+          `[NotificationService] Channel "${this.channels[i].name}" failed to send notification:`,
           result.reason,
         );
       }

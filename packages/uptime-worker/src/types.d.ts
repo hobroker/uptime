@@ -22,4 +22,5 @@ export interface Monitor {
 
 export interface UptimeWorkerConfig {
   monitors: Monitor[];
+  statuspageUrl?: string;
 }

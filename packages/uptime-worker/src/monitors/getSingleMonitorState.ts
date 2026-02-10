@@ -1,4 +1,5 @@
 import { Monitor, UptimeStateMonitor } from "../types";
+import { MonitorStatus } from "../constants";
 
 export const getSingleMonitorState = async (
   monitor: Monitor,
@@ -8,7 +9,7 @@ export const getSingleMonitorState = async (
   const state: UptimeStateMonitor = {
     name: monitor.name,
     target: monitor.target,
-    status: "up",
+    status: MonitorStatus.Up,
     protectedByZeroTrust: false,
   };
 
@@ -29,7 +30,7 @@ export const getSingleMonitorState = async (
     });
     const expectedCodes = monitor.expectedCodes || [200];
     if (!expectedCodes.includes(response.status)) {
-      state.status = "down";
+      state.status = MonitorStatus.Down;
       state.error = `HTTP ${response.status} ${response.statusText}`;
     }
     if (
@@ -37,13 +38,13 @@ export const getSingleMonitorState = async (
       [401, 403].includes(response.status) // TODO handle `expectedCodes` here, sometimes it may be necessary to expect 401 or 403
     ) {
       state.protectedByZeroTrust = true;
-      state.status = "down";
+      state.status = MonitorStatus.Down;
       state.error = `Protected by Zero Trust (HTTP ${response.status})`;
     }
     return state;
   } catch (error) {
     console.error(`${monitor.name} errored with`, error);
-    state.status = "down";
+    state.status = MonitorStatus.Down;
     state.error = error instanceof Error ? error.message : "Unknown error";
     return state;
   }
