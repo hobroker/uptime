@@ -1,9 +1,5 @@
 import { StatuspageBaseService } from "./StatuspageBaseService";
-import type {
-  StatuspageComponentStatus,
-  StatuspageIncident,
-  StatuspageIncidentStatus,
-} from "./types";
+import type { StatuspageIncident, StatuspageIncidentStatus } from "./types";
 
 export class StatuspageIncidentService extends StatuspageBaseService {
   async listUnresolvedIncidents(): Promise<StatuspageIncident[]> {
@@ -17,12 +13,12 @@ export class StatuspageIncidentService extends StatuspageBaseService {
     name,
     status,
     body,
-    components,
+    componentIds,
   }: {
     name: string;
     status: StatuspageIncidentStatus;
     body?: string;
-    components?: Record<string, StatuspageComponentStatus>;
+    componentIds?: string[];
   }): Promise<StatuspageIncident> {
     return this.request<StatuspageIncident>(
       `/pages/${this.pageId}/incidents.json`,
@@ -33,7 +29,7 @@ export class StatuspageIncidentService extends StatuspageBaseService {
             name,
             status,
             body,
-            components,
+            component_ids: componentIds,
           },
         },
       },
@@ -45,11 +41,11 @@ export class StatuspageIncidentService extends StatuspageBaseService {
     {
       status,
       body,
-      components,
+      componentIds,
     }: {
       status?: StatuspageIncidentStatus;
       body?: string;
-      components?: Record<string, StatuspageComponentStatus>;
+      componentIds?: string[];
     },
   ): Promise<StatuspageIncident> {
     return this.request<StatuspageIncident>(
@@ -60,7 +56,7 @@ export class StatuspageIncidentService extends StatuspageBaseService {
           incident: {
             status,
             body,
-            components,
+            component_ids: componentIds,
           },
         },
       },
