@@ -54,6 +54,7 @@ describe("syncIncidents", () => {
         target: "https://api.example.com",
         status: "down",
         protectedByZeroTrust: false,
+        error: "HTTP 500 Internal Server Error",
       },
       {
         name: "web",
@@ -70,7 +71,7 @@ describe("syncIncidents", () => {
     expect(mockCreateIncident).toHaveBeenCalledWith({
       name: "api Down",
       status: "investigating",
-      body: "Affected services:\n🔴 api",
+      body: "Affected services:\n🔴 api — HTTP 500 Internal Server Error",
       componentIds: ["comp-1"],
     });
     expect(kv.put).toHaveBeenCalledWith("statuspageIncidentId", "inc-123");
@@ -201,10 +202,35 @@ describe("syncIncidents", () => {
         target: "https://api.example.com",
         status: "down",
         protectedByZeroTrust: false,
+        error: "HTTP 503 Service Unavailable",
       },
       {
         name: "web",
         target: "https://web.example.com",
+        status: "down",
+        protectedByZeroTrust: false,
+        error: "The operation was aborted due to timeout",
+      },
+    ];
+
+    const kv = createMockKV();
+    const service = new StatuspageIncidentService({ apiKey: "", pageId: "" });
+    await syncIncidents({ state, byName, incidentService: service, kv });
+
+    expect(mockCreateIncident).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "Multiple Systems Disrupted",
+        body: "Affected services:\n🔴 api — HTTP 503 Service Unavailable\n🔴 web — The operation was aborted due to timeout",
+        componentIds: ["comp-1", "comp-2"],
+      }),
+    );
+  });
+
+  it("should omit error detail when error is not set", async () => {
+    const state: UptimeState = [
+      {
+        name: "api",
+        target: "https://api.example.com",
         status: "down",
         protectedByZeroTrust: false,
       },
@@ -216,9 +242,7 @@ describe("syncIncidents", () => {
 
     expect(mockCreateIncident).toHaveBeenCalledWith(
       expect.objectContaining({
-        name: "Multiple Systems Disrupted",
-        body: "Affected services:\n🔴 api\n🔴 web",
-        componentIds: ["comp-1", "comp-2"],
+        body: "Affected services:\n🔴 api",
       }),
     );
   });

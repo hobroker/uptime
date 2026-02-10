@@ -35,7 +35,10 @@ export const syncIncidents = async ({
       const comp = byName.get(monitor.name);
       if (comp) {
         componentIds.push(comp.id);
-        affectedLines.push(`🔴 ${monitor.name}`);
+        const line = monitor.error
+          ? `🔴 ${monitor.name} — ${monitor.error}`
+          : `🔴 ${monitor.name}`;
+        affectedLines.push(line);
       }
     }
 

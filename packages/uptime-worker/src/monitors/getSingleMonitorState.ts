@@ -27,8 +27,10 @@ export const getSingleMonitorState = async (
       },
       signal: AbortSignal.timeout(monitor.timeout || 5000),
     });
-    if (!(monitor.expectedCodes || [200]).includes(response.status)) {
+    const expectedCodes = monitor.expectedCodes || [200];
+    if (!expectedCodes.includes(response.status)) {
       state.status = "down";
+      state.error = `HTTP ${response.status} ${response.statusText}`;
     }
     if (
       response.headers.get("cf-access-domain") ||
@@ -36,11 +38,13 @@ export const getSingleMonitorState = async (
     ) {
       state.protectedByZeroTrust = true;
       state.status = "down";
+      state.error = `Protected by Zero Trust (HTTP ${response.status})`;
     }
     return state;
   } catch (error) {
-    console.log(`${monitor.name} errored with`, error);
+    console.error(`${monitor.name} errored with`, error);
     state.status = "down";
+    state.error = error instanceof Error ? error.message : "Unknown error";
     return state;
   }
 };
