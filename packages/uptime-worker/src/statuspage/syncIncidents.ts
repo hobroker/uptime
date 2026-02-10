@@ -1,7 +1,7 @@
-import { UPTIME_KV_KEYS } from "../kvKeys";
 import {
   StatuspageIncidentService,
   type StatuspageComponent,
+  type StatuspageIncident,
 } from "../services/statuspage";
 import type { UptimeState } from "../types";
 import { sleep } from "../util/sleep";
@@ -55,15 +55,13 @@ export const buildPostmortemBody = (incidentDetails: string): string =>
 // API workflows
 // ---------------------------------------------------------------------------
 
-/** Create a new incident and persist its ID in KV. */
+/** Create a new incident. */
 const createIncident = async ({
   data,
   incidentService,
-  kv,
 }: {
   data: IncidentData;
   incidentService: StatuspageIncidentService;
-  kv: KVNamespace;
 }): Promise<void> => {
   console.log("Statuspage: creating incident for down monitors");
   await sleep(1100);
@@ -73,8 +71,6 @@ const createIncident = async ({
     body: data.body,
     componentIds: data.componentIds,
   });
-  await kv.put(UPTIME_KV_KEYS.statuspageIncidentId, incident.id);
-  await kv.put(UPTIME_KV_KEYS.statuspageIncidentComponents, data.componentsKey);
 };
 
 /** Update an existing incident when the set of affected components changed. */
@@ -82,12 +78,10 @@ const updateIncident = async ({
   incidentId,
   data,
   incidentService,
-  kv,
 }: {
   incidentId: string;
   data: IncidentData;
   incidentService: StatuspageIncidentService;
-  kv: KVNamespace;
 }): Promise<void> => {
   console.log("Statuspage: updating existing incident with current state");
   await sleep(1100);
@@ -96,18 +90,15 @@ const updateIncident = async ({
     body: data.body,
     componentIds: data.componentIds,
   });
-  await kv.put(UPTIME_KV_KEYS.statuspageIncidentComponents, data.componentsKey);
 };
 
 /** Resolve the incident, create & publish a postmortem, then clean up KV. */
 const resolveIncident = async ({
   incidentId,
   incidentService,
-  kv,
 }: {
   incidentId: string;
   incidentService: StatuspageIncidentService;
-  kv: KVNamespace;
 }): Promise<void> => {
   const incident = await incidentService.getIncident(incidentId);
   const latestUpdate = incident.incident_updates.find(
@@ -132,9 +123,21 @@ const resolveIncident = async ({
   });
   await sleep(1100);
   await incidentService.publishPostmortem(incidentId);
+};
 
-  await kv.delete(UPTIME_KV_KEYS.statuspageIncidentId);
-  await kv.delete(UPTIME_KV_KEYS.statuspageIncidentComponents);
+const getLastUnresolvedIncident = async (
+  incidentService: StatuspageIncidentService,
+): Promise<StatuspageIncident | null> => {
+  const unresolved = await incidentService.listUnresolvedIncidents();
+  if (unresolved.length === 0) {
+    return null;
+  }
+  if (unresolved.length > 1) {
+    console.log(
+      `Statuspage: ${unresolved.length} unresolved incidents found, using the most recent entry`,
+    );
+  }
+  return unresolved[0];
 };
 
 // ---------------------------------------------------------------------------
@@ -152,37 +155,37 @@ export const syncIncidents = async ({
   state,
   byName,
   incidentService,
-  kv,
 }: {
   state: UptimeState;
   byName: Map<string, StatuspageComponent>;
   incidentService: StatuspageIncidentService;
-  kv: KVNamespace;
 }): Promise<void> => {
   const downMonitors = state.filter((m) => m.status === "down");
-  const activeIncidentId = await kv.get(UPTIME_KV_KEYS.statuspageIncidentId);
+  const activeIncident = await getLastUnresolvedIncident(incidentService);
+  const activeIncidentId = activeIncident?.id ?? null;
+  const lastComponentsKey = activeIncident
+    ? activeIncident.components
+        .map((component) => component.id)
+        .sort()
+        .join(",")
+    : null;
 
   if (downMonitors.length > 0) {
     const data = buildIncidentData(downMonitors, byName);
-    const lastComponentsKey = await kv.get(
-      UPTIME_KV_KEYS.statuspageIncidentComponents,
-    );
 
     if (!activeIncidentId) {
-      await createIncident({ data, incidentService, kv });
+      await createIncident({ data, incidentService });
     } else if (data.componentsKey !== lastComponentsKey) {
       await updateIncident({
         incidentId: activeIncidentId,
         data,
         incidentService,
-        kv,
       });
     }
   } else if (activeIncidentId) {
     await resolveIncident({
       incidentId: activeIncidentId,
       incidentService,
-      kv,
     });
   }
 };

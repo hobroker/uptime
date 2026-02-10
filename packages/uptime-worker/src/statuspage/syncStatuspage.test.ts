@@ -71,7 +71,6 @@ describe("syncStatuspage", () => {
       state,
       byName,
       incidentService: expect.anything(),
-      kv: env.uptime,
     });
   });
 });

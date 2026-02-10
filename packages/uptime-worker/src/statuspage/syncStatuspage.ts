@@ -37,6 +37,5 @@ export const syncStatuspage = async (
     state,
     byName,
     incidentService: new StatuspageIncidentService(config),
-    kv: env.uptime,
   });
 };

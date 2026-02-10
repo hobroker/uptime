@@ -13,6 +13,7 @@ vi.stubGlobal("setTimeout", (fn: () => void) => {
 });
 
 const mockGetIncident = vi.fn();
+const mockListUnresolvedIncidents = vi.fn();
 const mockCreateIncident = vi.fn();
 const mockUpdateIncident = vi.fn();
 const mockCreatePostmortem = vi.fn();
@@ -21,6 +22,7 @@ const mockPublishPostmortem = vi.fn();
 vi.mock("../services/statuspage", () => ({
   StatuspageIncidentService: class {
     getIncident = mockGetIncident;
+    listUnresolvedIncidents = mockListUnresolvedIncidents;
     createIncident = mockCreateIncident;
     updateIncident = mockUpdateIncident;
     createPostmortem = mockCreatePostmortem;
@@ -29,21 +31,6 @@ vi.mock("../services/statuspage", () => ({
 }));
 
 const { StatuspageIncidentService } = await import("../services/statuspage");
-
-const createMockKV = (initial: Record<string, string> = {}) => {
-  const store = new Map(Object.entries(initial));
-  return {
-    get: vi.fn((key: string) => Promise.resolve(store.get(key) ?? null)),
-    put: vi.fn((key: string, value: string) => {
-      store.set(key, value);
-      return Promise.resolve();
-    }),
-    delete: vi.fn((key: string) => {
-      store.delete(key);
-      return Promise.resolve();
-    }),
-  } as unknown as KVNamespace;
-};
 
 const byName = new Map<string, StatuspageComponent>([
   ["api", { id: "comp-1", name: "api", status: "operational" }],
@@ -54,6 +41,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockCreateIncident.mockResolvedValue({ id: "inc-123" });
   mockUpdateIncident.mockResolvedValue({ id: "inc-123" });
+  mockListUnresolvedIncidents.mockResolvedValue([]);
 });
 
 // ---------------------------------------------------------------------------
@@ -175,9 +163,8 @@ describe("syncIncidents", () => {
       },
     ];
 
-    const kv = createMockKV();
     const service = new StatuspageIncidentService({ apiKey: "", pageId: "" });
-    await syncIncidents({ state, byName, incidentService: service, kv });
+    await syncIncidents({ state, byName, incidentService: service });
 
     expect(mockCreateIncident).toHaveBeenCalledWith({
       name: "api Down",
@@ -185,11 +172,6 @@ describe("syncIncidents", () => {
       body: "Affected services:\n\n🔴 api — HTTP 500 Internal Server Error",
       componentIds: ["comp-1"],
     });
-    expect(kv.put).toHaveBeenCalledWith("statuspageIncidentId", "inc-123");
-    expect(kv.put).toHaveBeenCalledWith(
-      "statuspageIncidentComponents",
-      "comp-1",
-    );
   });
 
   it("should update the existing incident when affected components change", async () => {
@@ -208,12 +190,17 @@ describe("syncIncidents", () => {
       },
     ];
 
-    const kv = createMockKV({
-      statuspageIncidentId: "inc-existing",
-      statuspageIncidentComponents: "comp-1",
-    });
+    mockListUnresolvedIncidents.mockResolvedValue([
+      {
+        id: "inc-existing",
+        name: "api Down",
+        status: "investigating",
+        incident_updates: [],
+        components: [{ id: "comp-1", name: "api", status: "operational" }],
+      },
+    ]);
     const service = new StatuspageIncidentService({ apiKey: "", pageId: "" });
-    await syncIncidents({ state, byName, incidentService: service, kv });
+    await syncIncidents({ state, byName, incidentService: service });
 
     expect(mockCreateIncident).not.toHaveBeenCalled();
     expect(mockUpdateIncident).toHaveBeenCalledWith("inc-existing", {
@@ -221,10 +208,6 @@ describe("syncIncidents", () => {
       body: "Affected services:\n\n🔴 api\n\n🔴 web",
       componentIds: ["comp-1", "comp-2"],
     });
-    expect(kv.put).toHaveBeenCalledWith(
-      "statuspageIncidentComponents",
-      "comp-1,comp-2",
-    );
   });
 
   it("should skip update when affected components have not changed", async () => {
@@ -243,12 +226,17 @@ describe("syncIncidents", () => {
       },
     ];
 
-    const kv = createMockKV({
-      statuspageIncidentId: "inc-existing",
-      statuspageIncidentComponents: "comp-1",
-    });
+    mockListUnresolvedIncidents.mockResolvedValue([
+      {
+        id: "inc-existing",
+        name: "api Down",
+        status: "investigating",
+        incident_updates: [],
+        components: [{ id: "comp-1", name: "api", status: "operational" }],
+      },
+    ]);
     const service = new StatuspageIncidentService({ apiKey: "", pageId: "" });
-    await syncIncidents({ state, byName, incidentService: service, kv });
+    await syncIncidents({ state, byName, incidentService: service });
 
     expect(mockCreateIncident).not.toHaveBeenCalled();
     expect(mockUpdateIncident).not.toHaveBeenCalled();
@@ -281,9 +269,17 @@ describe("syncIncidents", () => {
       ],
     });
 
-    const kv = createMockKV({ statuspageIncidentId: "inc-existing" });
+    mockListUnresolvedIncidents.mockResolvedValue([
+      {
+        id: "inc-existing",
+        name: "api Down",
+        status: "investigating",
+        incident_updates: [],
+        components: [{ id: "comp-1", name: "api", status: "operational" }],
+      },
+    ]);
     const service = new StatuspageIncidentService({ apiKey: "", pageId: "" });
-    await syncIncidents({ state, byName, incidentService: service, kv });
+    await syncIncidents({ state, byName, incidentService: service });
 
     expect(mockGetIncident).toHaveBeenCalledWith("inc-existing");
     expect(mockUpdateIncident).toHaveBeenCalledWith("inc-existing", {
@@ -294,8 +290,6 @@ describe("syncIncidents", () => {
       body: "##### Issue\n\nAffected services:\n🔴 api — HTTP 500 Internal Server Error\n\n##### Resolution\n\nAll services are back up and running and the incident has been resolved.",
     });
     expect(mockPublishPostmortem).toHaveBeenCalledWith("inc-existing");
-    expect(kv.delete).toHaveBeenCalledWith("statuspageIncidentId");
-    expect(kv.delete).toHaveBeenCalledWith("statuspageIncidentComponents");
   });
 
   it("should do nothing when all monitors are up and no active incident", async () => {
@@ -314,9 +308,8 @@ describe("syncIncidents", () => {
       },
     ];
 
-    const kv = createMockKV();
     const service = new StatuspageIncidentService({ apiKey: "", pageId: "" });
-    await syncIncidents({ state, byName, incidentService: service, kv });
+    await syncIncidents({ state, byName, incidentService: service });
 
     expect(mockCreateIncident).not.toHaveBeenCalled();
     expect(mockUpdateIncident).not.toHaveBeenCalled();
