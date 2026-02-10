@@ -1,13 +1,13 @@
 import {
   StatuspageComponentService,
+  StatuspageComponentStatus,
   type StatuspageComponent,
 } from "./services";
-import type { UptimeState } from "../../../types";
-import { sleep } from "../../../util/sleep";
+import type { MonitorStatus, UptimeState } from "../../../types";
 
 const mapMonitorStatusToComponent = (
-  status: "up" | "down",
-): "operational" | "major_outage" => {
+  status: MonitorStatus,
+): StatuspageComponentStatus => {
   return status === "up" ? "operational" : "major_outage";
 };
 
@@ -37,7 +37,6 @@ export const syncComponents = async ({
         status: desired,
       });
       byName.set(component.name, component);
-      await sleep(1100);
       continue;
     }
 
@@ -50,7 +49,6 @@ export const syncComponents = async ({
         status: desired,
       });
       byName.set(component.name, component);
-      await sleep(1100);
     }
   }
 

@@ -1,9 +1,4 @@
-export type StatuspageComponentStatus =
-  | "operational"
-  | "degraded_performance"
-  | "partial_outage"
-  | "major_outage"
-  | "under_maintenance";
+export type StatuspageComponentStatus = "operational" | "major_outage";
 
 export interface StatuspageComponent {
   id: string;

@@ -3,8 +3,8 @@ import { UPTIME_KV_KEYS } from "../../../kvKeys";
 import { TelegramService } from "./TelegramService";
 import type { NotificationChannel, NotificationContext } from "../../types";
 import { buildDowntimeMessage, type DowntimeMessage } from "../../messages";
-
-const STATUSPAGE_URL = "https://hobroker.statuspage.io/";
+import { ChannelName } from "../constants";
+import { uptimeWorkerConfig } from "../../../../uptime.config";
 
 const isHttpUrl = (value: string) => {
   try {
@@ -15,12 +15,21 @@ const isHttpUrl = (value: string) => {
   }
 };
 
-const formatDowntimeMessage = (report: DowntimeMessage) => {
+const formatDowntimeMessage = (
+  report: DowntimeMessage,
+  statusPageUrl?: string,
+) => {
   let msg = new FormattedString("");
-  msg = msg.link(`⚠️ ${report.title} ⚠️`, STATUSPAGE_URL);
+
+  if (statusPageUrl) {
+    msg = msg.link(`⚠️ ${report.title} ⚠️`, statusPageUrl);
+  } else {
+    msg = msg.plain(`⚠️ ${report.title} ⚠️`);
+  }
+
   msg = msg.plain("\n\n");
 
-  report.downMonitors.forEach(({ name, target, protectedByZeroTrust }, i) => {
+  report.downMonitors.forEach(({ name, target, error }, i) => {
     if (i > 0) msg = msg.plain("\n");
 
     msg = msg.plain("🔴 ");
@@ -31,25 +40,31 @@ const formatDowntimeMessage = (report: DowntimeMessage) => {
       msg = msg.b(name).plain(" (").plain(target).plain(")");
     }
 
-    msg = msg.plain(protectedByZeroTrust ? ": (protected by Zero Trust)" : "");
+    msg = msg.plain(error ? `: ${error}` : "");
   });
 
   return msg;
 };
 
-const formatRecoveryMessage = () =>
-  new FormattedString("✅ All monitors are up and running!\n").link(
-    "Status page",
-    STATUSPAGE_URL,
-  );
+const formatRecoveryMessage = (statusPageUrl?: string) => {
+  const message = new FormattedString("✅ All monitors are up and running!\n");
+
+  if (statusPageUrl) {
+    return message.link("Status page", statusPageUrl);
+  }
+
+  return message;
+};
 
 export class TelegramChannel implements NotificationChannel {
-  name = "telegram";
+  name = ChannelName.Telegram;
 
   async notify({ state, env }: NotificationContext): Promise<void> {
     const telegramService = new TelegramService({
       token: env.TELEGRAM_BOT_TOKEN,
     });
+
+    const statusPageUrl = uptimeWorkerConfig.statuspageUrl;
 
     const lastNotificationOfDowntime = await env.uptime.get(
       UPTIME_KV_KEYS.lastNotificationOfDowntime,
@@ -57,23 +72,23 @@ export class TelegramChannel implements NotificationChannel {
     const downMonitors = state.filter((m) => m.status === "down");
     const isAnyMonitorDown = downMonitors.length > 0;
 
-    // if we already sent a notification, check if the state has changed
+    // if we already sent a notification, check if the status has changed
     if (lastNotificationOfDowntime) {
       if (isAnyMonitorDown) {
         // we already notified about downtime
         console.log(
-          "Already notified via Telegram about downtime, skipping notification",
+          "[TelegramChannel] Already notified via Telegram about downtime, skipping notification",
         );
         return;
       }
 
       await env.uptime.put(UPTIME_KV_KEYS.lastNotificationOfDowntime, "");
 
-      console.log(`Telegram: sending recovery message`);
+      console.log("[TelegramChannel] sending recovery message");
 
       await telegramService.sendMessage({
         chatId: env.TELEGRAM_CHAT_ID,
-        message: formatRecoveryMessage(),
+        message: formatRecoveryMessage(statusPageUrl),
         options: {
           reply_parameters: {
             message_id: parseInt(lastNotificationOfDowntime, 10),
@@ -82,21 +97,23 @@ export class TelegramChannel implements NotificationChannel {
       });
 
       console.log(
-        "All monitors are up, sent Telegram notification about recovery",
+        "[TelegramChannel] All monitors are up, sent Telegram notification about recovery",
       );
       return;
     }
 
     if (!isAnyMonitorDown) {
       // no monitors are down, so we don't need to send a notification
-      console.log("No monitors are down, skipping Telegram notification");
+      console.log(
+        "[TelegramChannel] No monitors are down, skipping Telegram notification",
+      );
       return;
     }
 
     // no previous notification, so we can send a message if at least one monitor is down
     const downtime = buildDowntimeMessage(downMonitors);
-    console.log(`Telegram: sending ${downtime.type} message`);
-    const formatted = formatDowntimeMessage(downtime);
+    console.log(`[TelegramChannel] sending ${downtime.type} message`);
+    const formatted = formatDowntimeMessage(downtime, statusPageUrl);
     const message = await telegramService.sendMessage({
       chatId: env.TELEGRAM_CHAT_ID,
       message: formatted,
@@ -106,6 +123,6 @@ export class TelegramChannel implements NotificationChannel {
       UPTIME_KV_KEYS.lastNotificationOfDowntime,
       message.message_id.toString(),
     );
-    console.log("Sent Telegram notification about downtime");
+    console.log("[TelegramChannel] Sent Telegram notification about downtime");
   }
 }

@@ -1,56 +1,62 @@
-import { UptimeWorkerConfig } from "./packages/uptime-worker/src/types";
+import { UptimeWorkerConfig } from "./src/types";
+
+const zeroTrustAuth = ({ env }: { env: Env }) => ({
+  "CF-Access-Client-Id": env.CF_ACCESS_CLIENT_ID,
+  "CF-Access-Client-Secret": env.CF_ACCESS_CLIENT_SECRET,
+});
 
 export const uptimeWorkerConfig: UptimeWorkerConfig = {
+  statuspageUrl: "https://hobroker.statuspage.io",
   monitors: [
     {
       name: "Rancher",
       target: "https://rancher.hobroker.me",
-      protectedByZeroTrust: true,
+      headers: zeroTrustAuth,
     },
     {
       name: "Sonarr",
       target: "https://sonarr.hobroker.me",
-      protectedByZeroTrust: true,
+      headers: zeroTrustAuth,
     },
     {
       name: "Radarr",
       target: "https://radarr.hobroker.me",
-      protectedByZeroTrust: true,
+      headers: zeroTrustAuth,
     },
     {
       name: "Prowlarr",
       target: "https://prowlarr.hobroker.me",
-      protectedByZeroTrust: true,
+      headers: zeroTrustAuth,
     },
     {
       name: "Tautulli",
       target: "https://tautulli.hobroker.me",
-      protectedByZeroTrust: true,
+      headers: zeroTrustAuth,
     },
     {
       name: "qBittorrent",
       target: "https://qbittorrent.hobroker.me",
-      protectedByZeroTrust: true,
+      headers: zeroTrustAuth,
     },
     {
       name: "VS Code",
       target: "https://code.hobroker.me",
-      protectedByZeroTrust: true,
+      headers: zeroTrustAuth,
     },
     {
       name: "Syncthing",
       target: "https://syncthing.hobroker.me",
-      protectedByZeroTrust: true,
+      headers: zeroTrustAuth,
     },
     {
       name: "n8n",
       target: "https://n8n.hobroker.me",
-      protectedByZeroTrust: true,
+      headers: zeroTrustAuth,
     },
     {
       name: "http-echos-echo",
       target: "https://demo.hobroker.me",
-      protectedByZeroTrust: true,
+      headers: zeroTrustAuth,
     },
   ],
 };

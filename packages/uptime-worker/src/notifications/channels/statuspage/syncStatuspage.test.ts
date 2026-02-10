@@ -41,7 +41,6 @@ const state: UptimeState = [
     name: "api",
     target: "https://api.example.com",
     status: "up",
-    protectedByZeroTrust: false,
   },
 ];
 
