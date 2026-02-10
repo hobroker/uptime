@@ -1,6 +1,6 @@
 import { vi } from "vitest";
-import { syncStatuspage } from "./syncStatuspage";
-import { UptimeState } from "../types";
+import { StatuspageChannel } from "./StatuspageChannel";
+import { UptimeState } from "../../../types";
 
 vi.stubGlobal("setTimeout", (fn: () => void) => {
   fn();
@@ -18,7 +18,7 @@ vi.mock("./syncIncidents", () => ({
   syncIncidents: (...args: unknown[]) => mockSyncIncidents(...args),
 }));
 
-vi.mock("../services/statuspage", () => ({
+vi.mock("./services", () => ({
   StatuspageComponentService: class {},
   StatuspageIncidentService: class {},
 }));
@@ -45,12 +45,14 @@ const state: UptimeState = [
   },
 ];
 
-describe("syncStatuspage", () => {
+describe("StatuspageChannel", () => {
+  const channel = new StatuspageChannel();
+
   it("should skip when Statuspage is not configured", async () => {
     const env = createEnv();
     env.STATUSPAGE_IO_API_KEY = "" as string;
 
-    await syncStatuspage(state, { env });
+    await channel.notify({ state, env });
 
     expect(mockSyncComponents).not.toHaveBeenCalled();
     expect(mockSyncIncidents).not.toHaveBeenCalled();
@@ -61,7 +63,7 @@ describe("syncStatuspage", () => {
     mockSyncComponents.mockResolvedValue(byName);
 
     const env = createEnv();
-    await syncStatuspage(state, { env });
+    await channel.notify({ state, env });
 
     expect(mockSyncComponents).toHaveBeenCalledWith({
       state,

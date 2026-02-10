@@ -2,9 +2,10 @@ import {
   StatuspageIncidentService,
   type StatuspageComponent,
   type StatuspageIncident,
-} from "../services/statuspage";
-import type { UptimeState } from "../types";
-import { sleep } from "../util/sleep";
+} from "./services";
+import type { UptimeState } from "../../../types";
+import { buildDowntimeMessage } from "../../messages";
+import { sleep } from "../../../util/sleep";
 
 interface IncidentData {
   name: string;
@@ -18,28 +19,15 @@ export const buildIncidentData = (
   downMonitors: UptimeState,
   byName: Map<string, StatuspageComponent>,
 ): IncidentData => {
-  const componentIds: string[] = [];
-  const affectedLines: string[] = [];
+  const report = buildDowntimeMessage(downMonitors);
 
-  for (const monitor of downMonitors) {
-    const comp = byName.get(monitor.name);
-    if (comp) {
-      componentIds.push(comp.id);
-      const line = monitor.error
-        ? `🔴 ${monitor.name} — ${monitor.error}`
-        : `🔴 ${monitor.name}`;
-      affectedLines.push(line);
-    }
-  }
+  const componentIds = downMonitors
+    .map((m) => byName.get(m.name)?.id)
+    .filter((id): id is string => id != null);
 
-  const body = `Affected services:\n\n${affectedLines.join("\n\n")}`;
-  const name =
-    affectedLines.length === 1
-      ? `${downMonitors.find((m) => byName.has(m.name))!.name} Down`
-      : "Multiple Systems Disrupted";
   const componentsKey = componentIds.slice().sort().join(",");
 
-  return { name, body, componentIds, componentsKey };
+  return { name: report.title, body: report.body, componentIds, componentsKey };
 };
 
 /** Build a Markdown postmortem body from the incident details. */
@@ -65,7 +53,7 @@ const createIncident = async ({
 }): Promise<void> => {
   console.log("Statuspage: creating incident for down monitors");
   await sleep(1100);
-  const incident = await incidentService.createIncident({
+  await incidentService.createIncident({
     name: data.name,
     status: "investigating",
     body: data.body,

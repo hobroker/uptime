@@ -1,9 +1,9 @@
 import {
   StatuspageComponentService,
   type StatuspageComponent,
-} from "../services/statuspage";
-import type { UptimeState } from "../types";
-import { sleep } from "../util/sleep";
+} from "./services";
+import type { UptimeState } from "../../../types";
+import { sleep } from "../../../util/sleep";
 
 const mapMonitorStatusToComponent = (
   status: "up" | "down",
