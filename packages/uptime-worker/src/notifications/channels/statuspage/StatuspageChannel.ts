@@ -14,7 +14,7 @@ export class StatuspageChannel implements NotificationChannel {
   async notify({ state, env }: NotificationContext): Promise<void> {
     if (!env.STATUSPAGE_IO_API_KEY || !env.STATUSPAGE_IO_PAGE_ID) {
       console.log(
-        "Statuspage not configured (missing STATUSPAGE_IO_API_KEY or STATUSPAGE_IO_PAGE_ID), skipping",
+        "[StatuspageChannel] Statuspage not configured (missing STATUSPAGE_IO_API_KEY or STATUSPAGE_IO_PAGE_ID), skipping",
       );
       return;
     }

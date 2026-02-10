@@ -77,14 +77,14 @@ export class TelegramChannel implements NotificationChannel {
       if (isAnyMonitorDown) {
         // we already notified about downtime
         console.log(
-          "Already notified via Telegram about downtime, skipping notification",
+          "[TelegramChannel] Already notified via Telegram about downtime, skipping notification",
         );
         return;
       }
 
       await env.uptime.put(UPTIME_KV_KEYS.lastNotificationOfDowntime, "");
 
-      console.log(`Telegram: sending recovery message`);
+      console.log("[TelegramChannel] sending recovery message");
 
       await telegramService.sendMessage({
         chatId: env.TELEGRAM_CHAT_ID,
@@ -97,20 +97,22 @@ export class TelegramChannel implements NotificationChannel {
       });
 
       console.log(
-        "All monitors are up, sent Telegram notification about recovery",
+        "[TelegramChannel] All monitors are up, sent Telegram notification about recovery",
       );
       return;
     }
 
     if (!isAnyMonitorDown) {
       // no monitors are down, so we don't need to send a notification
-      console.log("No monitors are down, skipping Telegram notification");
+      console.log(
+        "[TelegramChannel] No monitors are down, skipping Telegram notification",
+      );
       return;
     }
 
     // no previous notification, so we can send a message if at least one monitor is down
     const downtime = buildDowntimeMessage(downMonitors);
-    console.log(`Telegram: sending ${downtime.type} message`);
+    console.log(`[TelegramChannel] sending ${downtime.type} message`);
     const formatted = formatDowntimeMessage(downtime, statusPageUrl);
     const message = await telegramService.sendMessage({
       chatId: env.TELEGRAM_CHAT_ID,
@@ -121,6 +123,6 @@ export class TelegramChannel implements NotificationChannel {
       UPTIME_KV_KEYS.lastNotificationOfDowntime,
       message.message_id.toString(),
     );
-    console.log("Sent Telegram notification about downtime");
+    console.log("[TelegramChannel] Sent Telegram notification about downtime");
   }
 }
