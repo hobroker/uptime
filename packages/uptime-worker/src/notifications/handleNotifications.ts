@@ -1,4 +1,5 @@
 import { FormattedString } from "@grammyjs/parse-mode";
+import { UPTIME_KV_KEYS } from "../kvKeys";
 import { TelegramService } from "../services/TelegramService";
 import { UptimeState } from "../types";
 
@@ -46,7 +47,7 @@ export const handleNotifications = async (
   });
 
   const lastNotificationOfDowntime = await env.uptime.get(
-    "lastNotificationOfDowntime",
+    UPTIME_KV_KEYS.lastNotificationOfDowntime,
   );
   const isAnyMonitorDown = state.some((monitor) => monitor.status === "down");
 
@@ -58,7 +59,7 @@ export const handleNotifications = async (
       return;
     }
 
-    await env.uptime.put("lastNotificationOfDowntime", "");
+    await env.uptime.put(UPTIME_KV_KEYS.lastNotificationOfDowntime, "");
 
     // we notified about downtime, but now all monitors are up
     // so we can send a message that everything is back to normal
@@ -94,7 +95,7 @@ export const handleNotifications = async (
   });
 
   await env.uptime.put(
-    "lastNotificationOfDowntime",
+    UPTIME_KV_KEYS.lastNotificationOfDowntime,
     message.message_id.toString(),
   );
   console.log("Sent notification about downtime");

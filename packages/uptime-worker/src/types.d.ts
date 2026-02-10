@@ -3,6 +3,7 @@ interface UptimeStateMonitor {
   target: string;
   status: "up" | "down";
   protectedByZeroTrust: boolean;
+  error?: string;
 }
 
 export type UptimeState = UptimeStateMonitor[];

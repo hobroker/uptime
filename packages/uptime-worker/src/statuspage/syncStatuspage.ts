@@ -1,24 +1,16 @@
-import { StatuspageService } from "../services/StatuspageService";
+import {
+  StatuspageComponentService,
+  StatuspageIncidentService,
+} from "../services/statuspage";
 import type { UptimeState } from "../types";
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-const mapMonitorStatusToComponent = (
-  status: "up" | "down",
-): "operational" | "major_outage" => {
-  return status === "up" ? "operational" : "major_outage";
-};
+import { syncComponents } from "./syncComponents";
+import { syncIncidents } from "./syncIncidents";
 
 /**
- * Syncs current monitor state to Statuspage by mapping each monitor to a component.
+ * Syncs current monitor state to Statuspage.
  *
- * Strategy:
- * - component name == monitor.name
- * - ensure component exists; create if missing
- * - update component status to operational/major_outage
- *
- * Notes:
- * - Statuspage API is rate limited to ~1 req/sec per token. We deliberately sleep between calls.
+ * 1. Ensures components exist with correct status and position.
+ * 2. Creates / updates / resolves an incident based on down monitors.
  */
 export const syncStatuspage = async (
   state: UptimeState,
@@ -31,40 +23,19 @@ export const syncStatuspage = async (
     return;
   }
 
-  const statuspage = new StatuspageService({
+  const config = {
     apiKey: env.STATUSPAGE_IO_API_KEY,
     pageId: env.STATUSPAGE_IO_PAGE_ID,
+  };
+
+  const byName = await syncComponents({
+    state,
+    componentService: new StatuspageComponentService(config),
   });
 
-  // Pull components once
-  const components = await statuspage.listComponents();
-  const byName = new Map(components.map((c) => [c.name, c]));
-
-  for (const monitor of state) {
-    const desired = mapMonitorStatusToComponent(monitor.status);
-
-    let component = byName.get(monitor.name);
-    if (!component) {
-      console.log(`Statuspage: creating component '${monitor.name}'`);
-      component = await statuspage.createComponent({
-        name: monitor.name,
-        status: desired,
-      });
-      byName.set(component.name, component);
-      await sleep(1100);
-      continue;
-    }
-
-    if (component.status !== desired) {
-      console.log(
-        `Statuspage: updating component '${monitor.name}' ${component.status} -> ${desired}`,
-      );
-      component = await statuspage.updateComponentStatus({
-        componentId: component.id,
-        status: desired,
-      });
-      byName.set(component.name, component);
-      await sleep(1100);
-    }
-  }
+  await syncIncidents({
+    state,
+    byName,
+    incidentService: new StatuspageIncidentService(config),
+  });
 };
