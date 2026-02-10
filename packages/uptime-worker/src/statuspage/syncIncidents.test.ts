@@ -68,7 +68,7 @@ describe("syncIncidents", () => {
     await syncIncidents({ state, byName, incidentService: service, kv });
 
     expect(mockCreateIncident).toHaveBeenCalledWith({
-      name: "Service disruption",
+      name: "api Down",
       status: "investigating",
       body: "Affected services:\n🔴 api",
       componentIds: ["comp-1"],
@@ -105,6 +105,7 @@ describe("syncIncidents", () => {
 
     expect(mockCreateIncident).not.toHaveBeenCalled();
     expect(mockUpdateIncident).toHaveBeenCalledWith("inc-existing", {
+      name: "Multiple Systems Disrupted",
       body: "Affected services:\n🔴 api\n🔴 web",
       componentIds: ["comp-1", "comp-2"],
     });
@@ -215,6 +216,7 @@ describe("syncIncidents", () => {
 
     expect(mockCreateIncident).toHaveBeenCalledWith(
       expect.objectContaining({
+        name: "Multiple Systems Disrupted",
         body: "Affected services:\n🔴 api\n🔴 web",
         componentIds: ["comp-1", "comp-2"],
       }),

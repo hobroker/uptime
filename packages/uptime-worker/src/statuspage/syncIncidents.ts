@@ -40,6 +40,10 @@ export const syncIncidents = async ({
     }
 
     const body = `Affected services:\n${affectedLines.join("\n")}`;
+    const name =
+      affectedLines.length === 1
+        ? `${downMonitors.find((m) => byName.has(m.name))!.name} Down`
+        : "Multiple Systems Disrupted";
     const componentsKey = componentIds.slice().sort().join(",");
     const lastComponentsKey = await kv.get(
       UPTIME_KV_KEYS.statuspageIncidentComponents,
@@ -49,7 +53,7 @@ export const syncIncidents = async ({
       console.log("Statuspage: creating incident for down monitors");
       await sleep(1100);
       const incident = await incidentService.createIncident({
-        name: "Service disruption",
+        name,
         status: "investigating",
         body,
         componentIds,
@@ -60,6 +64,7 @@ export const syncIncidents = async ({
       console.log("Statuspage: updating existing incident with current state");
       await sleep(1100);
       await incidentService.updateIncident(activeIncidentId, {
+        name,
         body,
         componentIds,
       });

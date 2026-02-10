@@ -39,10 +39,12 @@ export class StatuspageIncidentService extends StatuspageBaseService {
   async updateIncident(
     incidentId: string,
     {
+      name,
       status,
       body,
       componentIds,
     }: {
+      name?: string;
       status?: StatuspageIncidentStatus;
       body?: string;
       componentIds?: string[];
@@ -54,6 +56,7 @@ export class StatuspageIncidentService extends StatuspageBaseService {
         method: "PATCH",
         json: {
           incident: {
+            name,
             status,
             body,
             component_ids: componentIds,
