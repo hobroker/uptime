@@ -1,11 +1,15 @@
 import { getSingleMonitorState } from "./getSingleMonitorState";
-import { UptimeWorkerConfig } from "../types";
+import { UptimeState, UptimeWorkerConfig } from "../types";
 
 export const getMonitorsState = async (
   config: UptimeWorkerConfig,
   { env }: { env: Env },
 ) => {
-  return Promise.all(
-    config.monitors.map((monitor) => getSingleMonitorState(monitor, { env })),
-  );
+  const state: UptimeState = [];
+  for (const monitor of config.monitors) {
+    const monitorState = await getSingleMonitorState(monitor, { env });
+    state.push(monitorState);
+  }
+
+  return state;
 };
