@@ -1,4 +1,5 @@
 import type { StatuspageConfig } from "./types";
+import { throttle } from "../../../../util/throttle";
 
 export class StatuspageBaseService {
   protected apiKey: string;
@@ -10,6 +11,10 @@ export class StatuspageBaseService {
     this.pageId = pageId;
   }
 
+  @throttle({
+    limit: 1,
+    interval: 1000,
+  })
   protected async request<T>(
     path: string,
     init: RequestInit & { json?: unknown } = {},
