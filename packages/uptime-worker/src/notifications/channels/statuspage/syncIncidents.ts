@@ -50,7 +50,7 @@ const createIncident = async ({
   data: IncidentData;
   incidentService: StatuspageIncidentService;
 }): Promise<void> => {
-  console.log("Statuspage: creating incident for failed checks");
+  console.log("[Statuspage] creating incident for failed checks");
   await incidentService.createIncident({
     name: data.name,
     status: "investigating",
@@ -69,7 +69,7 @@ const updateIncident = async ({
   data: IncidentData;
   incidentService: StatuspageIncidentService;
 }): Promise<void> => {
-  console.log("Statuspage: updating existing incident with current state");
+  console.log("[Statuspage] updating existing incident with current state");
   await incidentService.updateIncident(incidentId, {
     name: data.name,
     body: data.body,
@@ -92,7 +92,7 @@ const resolveIncident = async ({
   const incidentDetails =
     latestUpdate?.body || "One or more services experienced a disruption.";
 
-  console.log("Statuspage: resolving incident, all checks are up");
+  console.log("[Statuspage] resolving incident, all checks are up");
   await incidentService.updateIncident(incidentId, {
     status: "resolved",
     body: "All services have recovered.",
@@ -100,7 +100,7 @@ const resolveIncident = async ({
 
   const postmortemBody = buildPostmortemBody(incidentDetails);
 
-  console.log("Statuspage: creating postmortem");
+  console.log("[Statuspage] creating postmortem");
   await incidentService.createPostmortem(incidentId, {
     body: postmortemBody,
   });
@@ -116,7 +116,7 @@ const getLastUnresolvedIncident = async (
   }
   if (unresolved.length > 1) {
     console.log(
-      `Statuspage: ${unresolved.length} unresolved incidents found, using the most recent entry`,
+      `[Statuspage] ${unresolved.length} unresolved incidents found, using the most recent entry`,
     );
   }
   return unresolved[0];
