@@ -6,4 +6,5 @@ export type {
   StatuspageConfig,
   StatuspageIncident,
   StatuspageIncidentStatus,
+  StatuspageIncidentUpdate,
 } from "./types";

@@ -3,8 +3,7 @@ import {
   type StatuspageComponent,
 } from "../services/statuspage";
 import type { UptimeState } from "../types";
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+import { sleep } from "../util/sleep";
 
 const mapMonitorStatusToComponent = (
   status: "up" | "down",

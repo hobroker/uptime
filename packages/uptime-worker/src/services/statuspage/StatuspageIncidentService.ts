@@ -2,6 +2,13 @@ import { StatuspageBaseService } from "./StatuspageBaseService";
 import type { StatuspageIncident, StatuspageIncidentStatus } from "./types";
 
 export class StatuspageIncidentService extends StatuspageBaseService {
+  async getIncident(incidentId: string): Promise<StatuspageIncident> {
+    return this.request<StatuspageIncident>(
+      `/pages/${this.pageId}/incidents/${incidentId}.json`,
+      { method: "GET" },
+    );
+  }
+
   async listUnresolvedIncidents(): Promise<StatuspageIncident[]> {
     return this.request<StatuspageIncident[]>(
       `/pages/${this.pageId}/incidents/unresolved.json`,

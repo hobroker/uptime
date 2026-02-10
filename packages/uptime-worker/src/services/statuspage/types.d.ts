@@ -18,10 +18,17 @@ export type StatuspageIncidentStatus =
   | "resolved"
   | "postmortem";
 
+export interface StatuspageIncidentUpdate {
+  id: string;
+  status: StatuspageIncidentStatus;
+  body: string;
+}
+
 export interface StatuspageIncident {
   id: string;
   name: string;
   status: StatuspageIncidentStatus;
+  incident_updates: StatuspageIncidentUpdate[];
   components: StatuspageComponent[];
 }
 
