@@ -1,6 +1,6 @@
 import { vi } from "vitest";
 import { syncComponents } from "./syncComponents";
-import { UptimeState } from "../../../types";
+import { CheckResultList } from "../../../types";
 
 vi.stubGlobal("setTimeout", (fn: () => void) => {
   fn();
@@ -43,7 +43,7 @@ beforeEach(() => {
 
 describe("syncComponents", () => {
   it("should create missing components", async () => {
-    const state: UptimeState = [
+    const state: CheckResultList = [
       {
         name: "api",
         target: "https://api.example.com",
@@ -67,7 +67,7 @@ describe("syncComponents", () => {
   });
 
   it("should update component status when it changes", async () => {
-    const state: UptimeState = [
+    const state: CheckResultList = [
       {
         name: "api",
         target: "https://api.example.com",
@@ -90,7 +90,7 @@ describe("syncComponents", () => {
   });
 
   it("should not update when status already matches", async () => {
-    const state: UptimeState = [
+    const state: CheckResultList = [
       {
         name: "api",
         target: "https://api.example.com",
@@ -110,7 +110,7 @@ describe("syncComponents", () => {
   });
 
   it("should return a name-to-component map", async () => {
-    const state: UptimeState = [
+    const state: CheckResultList = [
       {
         name: "api",
         target: "https://api.example.com",

@@ -1,8 +1,8 @@
 import { UPTIME_KV_KEYS } from "../kvKeys";
-import { UptimeState } from "../types";
+import { CheckResultList } from "../types";
 
 export const updateUptimeKV = async (
-  state: UptimeState,
+  state: CheckResultList,
   { env }: { env: Env },
 ) => {
   await env.uptime.put(UPTIME_KV_KEYS.state, JSON.stringify(state));

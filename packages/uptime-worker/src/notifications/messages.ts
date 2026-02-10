@@ -1,4 +1,4 @@
-import type { UptimeState } from "../types";
+import type { CheckResultList } from "../types";
 
 // ── Message types ──────────────────────────────────────────────────────
 
@@ -8,8 +8,8 @@ export interface DowntimeMessage {
   title: string;
   /** Plain-text body listing affected services. */
   body: string;
-  /** The subset of monitors that are currently down. */
-  downMonitors: UptimeState;
+  /** The subset of checks that are currently down. */
+  failedChecks: CheckResultList;
 }
 
 /** Discriminated union of all notification message types. */
@@ -18,17 +18,15 @@ export type NotificationMessage = DowntimeMessage;
 // ── Builders ───────────────────────────────────────────────────────────
 
 export const buildDowntimeMessage = (
-  downMonitors: UptimeState,
+  failedChecks: CheckResultList,
 ): DowntimeMessage => {
-  const affectedLines = downMonitors.map((monitor) =>
-    monitor.error
-      ? `🔴 ${monitor.name} — ${monitor.error}`
-      : `🔴 ${monitor.name}`,
+  const affectedLines = failedChecks.map((check) =>
+    check.error ? `🔴 ${check.name} — ${check.error}` : `🔴 ${check.name}`,
   );
 
   const title =
-    downMonitors.length === 1
-      ? `${downMonitors[0].name} Down`
+    failedChecks.length === 1
+      ? `${failedChecks[0].name} Down`
       : "Multiple Systems Disrupted";
 
   const body = `Affected services:\n\n${affectedLines.join("\n\n")}`;
@@ -37,6 +35,6 @@ export const buildDowntimeMessage = (
     type: "downtime",
     title,
     body,
-    downMonitors,
+    failedChecks,
   };
 };

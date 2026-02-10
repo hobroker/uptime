@@ -1,7 +1,7 @@
-import type { UptimeState } from "../types";
+import type { CheckResultList } from "../types";
 
 export interface NotificationContext {
-  state: UptimeState;
+  state: CheckResultList;
   env: Env;
 }
 

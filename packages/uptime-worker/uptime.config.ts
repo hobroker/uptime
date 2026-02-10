@@ -7,7 +7,7 @@ const zeroTrustAuth = ({ env }: { env: Env }) => ({
 
 export const uptimeWorkerConfig: UptimeWorkerConfig = {
   statuspageUrl: "https://hobroker.statuspage.io",
-  monitors: [
+  checks: [
     {
       name: "Rancher",
       target: "https://rancher.hobroker.me",

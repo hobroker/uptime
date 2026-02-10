@@ -3,7 +3,7 @@ import {
   type StatuspageComponent,
   type StatuspageIncident,
 } from "./services";
-import type { UptimeState } from "../../../types";
+import type { CheckResultList } from "../../../types";
 import { buildDowntimeMessage } from "../../messages";
 
 interface IncidentData {
@@ -13,15 +13,15 @@ interface IncidentData {
   componentsKey: string;
 }
 
-/** Build incident metadata from the current set of down monitors. */
+/** Build incident metadata from the current set of failed checks. */
 export const buildIncidentData = (
-  downMonitors: UptimeState,
+  failedChecks: CheckResultList,
   byName: Map<string, StatuspageComponent>,
 ): IncidentData => {
-  const report = buildDowntimeMessage(downMonitors);
+  const report = buildDowntimeMessage(failedChecks);
 
-  const componentIds = downMonitors
-    .map((m) => byName.get(m.name)?.id)
+  const componentIds = failedChecks
+    .map((c) => byName.get(c.name)?.id)
     .filter((id): id is string => id != null);
 
   const componentsKey = componentIds.slice().sort().join(",");
@@ -50,7 +50,7 @@ const createIncident = async ({
   data: IncidentData;
   incidentService: StatuspageIncidentService;
 }): Promise<void> => {
-  console.log("Statuspage: creating incident for down monitors");
+  console.log("Statuspage: creating incident for failed checks");
   await incidentService.createIncident({
     name: data.name,
     status: "investigating",
@@ -92,7 +92,7 @@ const resolveIncident = async ({
   const incidentDetails =
     latestUpdate?.body || "One or more services experienced a disruption.";
 
-  console.log("Statuspage: resolving incident, all monitors are up");
+  console.log("Statuspage: resolving incident, all checks are up");
   await incidentService.updateIncident(incidentId, {
     status: "resolved",
     body: "All services have recovered.",
@@ -127,22 +127,22 @@ const getLastUnresolvedIncident = async (
 // ---------------------------------------------------------------------------
 
 /**
- * Manages a single grouped incident for all down monitors.
+ * Manages a single grouped incident for all failed checks.
  *
- * - Creates an incident when monitors first go down.
- * - Updates the incident body when the set of down monitors changes.
- * - Resolves the incident when all monitors recover.
+ * - Creates an incident when checks first go down.
+ * - Updates the incident body when the set of failed checks changes.
+ * - Resolves the incident when all checks recover.
  */
 export const syncIncidents = async ({
   state,
   byName,
   incidentService,
 }: {
-  state: UptimeState;
+  state: CheckResultList;
   byName: Map<string, StatuspageComponent>;
   incidentService: StatuspageIncidentService;
 }): Promise<void> => {
-  const downMonitors = state.filter((m) => m.status === "down");
+  const failedChecks = state.filter((c) => c.status === "down");
   const activeIncident = await getLastUnresolvedIncident(incidentService);
   const activeIncidentId = activeIncident?.id ?? null;
   const lastComponentsKey = activeIncident
@@ -152,8 +152,8 @@ export const syncIncidents = async ({
         .join(",")
     : null;
 
-  if (downMonitors.length > 0) {
-    const data = buildIncidentData(downMonitors, byName);
+  if (failedChecks.length > 0) {
+    const data = buildIncidentData(failedChecks, byName);
 
     if (!activeIncidentId) {
       await createIncident({ data, incidentService });
