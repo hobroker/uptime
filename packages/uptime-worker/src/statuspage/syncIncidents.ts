@@ -42,7 +42,7 @@ export const syncIncidents = async ({
       }
     }
 
-    const body = `Affected services:\n${affectedLines.join("\n")}`;
+    const body = `Affected services:\n\n${affectedLines.join("\n\n")}`;
     const name =
       affectedLines.length === 1
         ? `${downMonitors.find((m) => byName.has(m.name))!.name} Down`
@@ -63,6 +63,7 @@ export const syncIncidents = async ({
       });
       await kv.put(UPTIME_KV_KEYS.statuspageIncidentId, incident.id);
       await kv.put(UPTIME_KV_KEYS.statuspageIncidentComponents, componentsKey);
+      await kv.put(UPTIME_KV_KEYS.statuspageIncidentDetails, body);
     } else if (componentsKey !== lastComponentsKey) {
       console.log("Statuspage: updating existing incident with current state");
       await sleep(1100);
@@ -72,15 +73,37 @@ export const syncIncidents = async ({
         componentIds,
       });
       await kv.put(UPTIME_KV_KEYS.statuspageIncidentComponents, componentsKey);
+      await kv.put(UPTIME_KV_KEYS.statuspageIncidentDetails, body);
     }
   } else if (activeIncidentId) {
+    const incidentDetails = await kv.get(
+      UPTIME_KV_KEYS.statuspageIncidentDetails,
+    );
+
     console.log("Statuspage: resolving incident, all monitors are up");
     await sleep(1100);
     await incidentService.updateIncident(activeIncidentId, {
       status: "resolved",
       body: "All services have recovered.",
     });
+
+    const postmortemBody = [
+      "##### Issue\n\n",
+      incidentDetails || "One or more services experienced a disruption.",
+      "\n\n##### Resolution\n\n",
+      "All services are back up and running and the incident has been resolved.",
+    ].join("");
+
+    console.log("Statuspage: creating postmortem");
+    await sleep(1100);
+    await incidentService.createPostmortem(activeIncidentId, {
+      body: postmortemBody,
+    });
+    await sleep(1100);
+    await incidentService.publishPostmortem(activeIncidentId);
+
     await kv.delete(UPTIME_KV_KEYS.statuspageIncidentId);
     await kv.delete(UPTIME_KV_KEYS.statuspageIncidentComponents);
+    await kv.delete(UPTIME_KV_KEYS.statuspageIncidentDetails);
   }
 };

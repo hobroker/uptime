@@ -5,4 +5,5 @@ export const UPTIME_KV_KEYS = {
   lastNotificationOfDowntime: "lastNotificationOfDowntime",
   statuspageIncidentId: "statuspageIncidentId",
   statuspageIncidentComponents: "statuspageIncidentComponents",
+  statuspageIncidentDetails: "statuspageIncidentDetails",
 } as const;

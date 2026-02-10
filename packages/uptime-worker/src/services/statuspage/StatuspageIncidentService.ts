@@ -36,6 +36,40 @@ export class StatuspageIncidentService extends StatuspageBaseService {
     );
   }
 
+  async createPostmortem(
+    incidentId: string,
+    { body }: { body: string },
+  ): Promise<void> {
+    await this.request(
+      `/pages/${this.pageId}/incidents/${incidentId}/postmortem`,
+      {
+        method: "PUT",
+        json: {
+          postmortem: {
+            body_draft: body,
+            notify_subscribers: false,
+            notify_twitter: false,
+          },
+        },
+      },
+    );
+  }
+
+  async publishPostmortem(incidentId: string): Promise<void> {
+    await this.request(
+      `/pages/${this.pageId}/incidents/${incidentId}/postmortem/publish`,
+      {
+        method: "PUT",
+        json: {
+          postmortem: {
+            notify_subscribers: false,
+            notify_twitter: false,
+          },
+        },
+      },
+    );
+  }
+
   async updateIncident(
     incidentId: string,
     {

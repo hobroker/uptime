@@ -10,11 +10,15 @@ vi.stubGlobal("setTimeout", (fn: () => void) => {
 
 const mockCreateIncident = vi.fn();
 const mockUpdateIncident = vi.fn();
+const mockCreatePostmortem = vi.fn();
+const mockPublishPostmortem = vi.fn();
 
 vi.mock("../services/statuspage", () => ({
   StatuspageIncidentService: class {
     createIncident = mockCreateIncident;
     updateIncident = mockUpdateIncident;
+    createPostmortem = mockCreatePostmortem;
+    publishPostmortem = mockPublishPostmortem;
   },
 }));
 
@@ -78,6 +82,10 @@ describe("syncIncidents", () => {
     expect(kv.put).toHaveBeenCalledWith(
       "statuspageIncidentComponents",
       "comp-1",
+    );
+    expect(kv.put).toHaveBeenCalledWith(
+      "statuspageIncidentDetails",
+      "Affected services:\n🔴 api — HTTP 500 Internal Server Error",
     );
   });
 
@@ -143,7 +151,7 @@ describe("syncIncidents", () => {
     expect(mockUpdateIncident).not.toHaveBeenCalled();
   });
 
-  it("should resolve the incident and clean up KV", async () => {
+  it("should resolve the incident, create postmortem, and clean up KV", async () => {
     const state: UptimeState = [
       {
         name: "api",
@@ -159,7 +167,11 @@ describe("syncIncidents", () => {
       },
     ];
 
-    const kv = createMockKV({ statuspageIncidentId: "inc-existing" });
+    const kv = createMockKV({
+      statuspageIncidentId: "inc-existing",
+      statuspageIncidentDetails:
+        "Affected services:\n🔴 api — HTTP 500 Internal Server Error",
+    });
     const service = new StatuspageIncidentService({ apiKey: "", pageId: "" });
     await syncIncidents({ state, byName, incidentService: service, kv });
 
@@ -167,8 +179,13 @@ describe("syncIncidents", () => {
       status: "resolved",
       body: "All services have recovered.",
     });
+    expect(mockCreatePostmortem).toHaveBeenCalledWith("inc-existing", {
+      body: "##### Issue\n\nAffected services:\n🔴 api — HTTP 500 Internal Server Error\n\n##### Resolution\n\nAll services recovered automatically and the incident was resolved.",
+    });
+    expect(mockPublishPostmortem).toHaveBeenCalledWith("inc-existing");
     expect(kv.delete).toHaveBeenCalledWith("statuspageIncidentId");
     expect(kv.delete).toHaveBeenCalledWith("statuspageIncidentComponents");
+    expect(kv.delete).toHaveBeenCalledWith("statuspageIncidentDetails");
   });
 
   it("should do nothing when all monitors are up and no active incident", async () => {
