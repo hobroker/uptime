@@ -1,16 +1,14 @@
 import {
   StatuspageComponentService,
+  StatuspageComponentStatus,
   type StatuspageComponent,
 } from "./services";
-import type { UptimeState } from "../../../types";
-import { ComponentStatus, MonitorStatus } from "../../../constants";
+import type { MonitorStatus, UptimeState } from "../../../types";
 
 const mapMonitorStatusToComponent = (
-  status: "up" | "down",
-): ComponentStatus => {
-  return status === MonitorStatus.Up
-    ? ComponentStatus.Operational
-    : ComponentStatus.MajorOutage;
+  status: MonitorStatus,
+): StatuspageComponentStatus => {
+  return status === "up" ? "operational" : "major_outage";
 };
 
 /**

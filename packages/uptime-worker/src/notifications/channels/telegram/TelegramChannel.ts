@@ -3,7 +3,7 @@ import { UPTIME_KV_KEYS } from "../../../kvKeys";
 import { TelegramService } from "./TelegramService";
 import type { NotificationChannel, NotificationContext } from "../../types";
 import { buildDowntimeMessage, type DowntimeMessage } from "../../messages";
-import { ChannelName, MonitorStatus } from "../../../constants";
+import { ChannelName } from "../constants";
 import { uptimeWorkerConfig } from "../../../../uptime.config";
 
 const isHttpUrl = (value: string) => {
@@ -69,7 +69,7 @@ export class TelegramChannel implements NotificationChannel {
     const lastNotificationOfDowntime = await env.uptime.get(
       UPTIME_KV_KEYS.lastNotificationOfDowntime,
     );
-    const downMonitors = state.filter((m) => m.status === MonitorStatus.Down);
+    const downMonitors = state.filter((m) => m.status === "down");
     const isAnyMonitorDown = downMonitors.length > 0;
 
     // if we already sent a notification, check if the status has changed

@@ -1,7 +1,9 @@
+export type MonitorStatus = "up" | "down";
+
 interface UptimeStateMonitor {
   name: string;
   target: string;
-  status: "up" | "down";
+  status: MonitorStatus;
   error?: string;
 }
 
