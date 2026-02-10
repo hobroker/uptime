@@ -7,5 +7,6 @@ export const resolveCheckConfig = (check: CheckConfig): ResolvedCheckConfig => {
     statusPageLink: check.statusPageLink || check.target,
     expectedCodes: check.expectedCodes || [200],
     timeout: check.timeout || 10000,
+    retryCount: check.retryCount ?? 0,
   };
 };

@@ -31,7 +31,7 @@ export const syncComponents = async ({
 
     let component = byName.get(check.name);
     if (!component) {
-      console.log(`Statuspage: creating component '${check.name}'`);
+      console.log(`[Statuspage] creating component '${check.name}'`);
       component = await componentService.createComponent({
         name: check.name,
         status: desired,
@@ -42,7 +42,7 @@ export const syncComponents = async ({
 
     if (component.status !== desired) {
       console.log(
-        `Statuspage: updating component '${check.name}' ${component.status} -> ${desired}`,
+        `[Statuspage] updating component '${check.name}' ${component.status} -> ${desired}`,
       );
       component = await componentService.updateComponentStatus({
         componentId: component.id,
