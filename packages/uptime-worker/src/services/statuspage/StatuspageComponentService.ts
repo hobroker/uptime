@@ -24,6 +24,7 @@ export class StatuspageComponentService extends StatuspageBaseService {
           component: {
             name,
             status,
+            showcase: true,
           },
         },
       },
