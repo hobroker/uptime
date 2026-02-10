@@ -1,3 +1,4 @@
+import { UPTIME_KV_KEYS } from "../kvKeys";
 import {
   StatuspageIncidentService,
   type StatuspageComponent,
@@ -25,20 +26,24 @@ export const syncIncidents = async ({
   kv: KVNamespace;
 }): Promise<void> => {
   const downMonitors = state.filter((m) => m.status === "down");
-  const activeIncidentId = await kv.get("statuspageIncidentId");
+  const activeIncidentId = await kv.get(UPTIME_KV_KEYS.statuspageIncidentId);
 
   if (downMonitors.length > 0) {
     const componentIds: string[] = [];
     const affectedLines: string[] = [];
-    for (const m of downMonitors) {
-      const comp = byName.get(m.name);
+    for (const monitor of downMonitors) {
+      const comp = byName.get(monitor.name);
       if (comp) {
         componentIds.push(comp.id);
-        affectedLines.push(`🔴 ${m.name}`);
+        affectedLines.push(`🔴 ${monitor.name}`);
       }
     }
 
     const body = `Affected services:\n${affectedLines.join("\n")}`;
+    const componentsKey = componentIds.slice().sort().join(",");
+    const lastComponentsKey = await kv.get(
+      UPTIME_KV_KEYS.statuspageIncidentComponents,
+    );
 
     if (!activeIncidentId) {
       console.log("Statuspage: creating incident for down monitors");
@@ -49,14 +54,16 @@ export const syncIncidents = async ({
         body,
         componentIds,
       });
-      await kv.put("statuspageIncidentId", incident.id);
-    } else {
+      await kv.put(UPTIME_KV_KEYS.statuspageIncidentId, incident.id);
+      await kv.put(UPTIME_KV_KEYS.statuspageIncidentComponents, componentsKey);
+    } else if (componentsKey !== lastComponentsKey) {
       console.log("Statuspage: updating existing incident with current state");
       await sleep(1100);
       await incidentService.updateIncident(activeIncidentId, {
         body,
         componentIds,
       });
+      await kv.put(UPTIME_KV_KEYS.statuspageIncidentComponents, componentsKey);
     }
   } else if (activeIncidentId) {
     console.log("Statuspage: resolving incident, all monitors are up");
@@ -65,6 +72,7 @@ export const syncIncidents = async ({
       status: "resolved",
       body: "All services have recovered.",
     });
-    await kv.delete("statuspageIncidentId");
+    await kv.delete(UPTIME_KV_KEYS.statuspageIncidentId);
+    await kv.delete(UPTIME_KV_KEYS.statuspageIncidentComponents);
   }
 };

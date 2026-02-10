@@ -74,6 +74,10 @@ describe("syncIncidents", () => {
       componentIds: ["comp-1"],
     });
     expect(kv.put).toHaveBeenCalledWith("statuspageIncidentId", "inc-123");
+    expect(kv.put).toHaveBeenCalledWith(
+      "statuspageIncidentComponents",
+      "comp-1",
+    );
   });
 
   it("should update the existing incident with current component IDs", async () => {
@@ -92,7 +96,10 @@ describe("syncIncidents", () => {
       },
     ];
 
-    const kv = createMockKV({ statuspageIncidentId: "inc-existing" });
+    const kv = createMockKV({
+      statuspageIncidentId: "inc-existing",
+      statuspageIncidentComponents: "comp-1",
+    });
     const service = new StatuspageIncidentService({ apiKey: "", pageId: "" });
     await syncIncidents({ state, byName, incidentService: service, kv });
 
@@ -101,9 +108,40 @@ describe("syncIncidents", () => {
       body: "Affected services:\n🔴 api\n🔴 web",
       componentIds: ["comp-1", "comp-2"],
     });
+    expect(kv.put).toHaveBeenCalledWith(
+      "statuspageIncidentComponents",
+      "comp-1,comp-2",
+    );
   });
 
-  it("should resolve the incident without setting component statuses", async () => {
+  it("should skip update when down monitors have not changed", async () => {
+    const state: UptimeState = [
+      {
+        name: "api",
+        target: "https://api.example.com",
+        status: "down",
+        protectedByZeroTrust: false,
+      },
+      {
+        name: "web",
+        target: "https://web.example.com",
+        status: "up",
+        protectedByZeroTrust: false,
+      },
+    ];
+
+    const kv = createMockKV({
+      statuspageIncidentId: "inc-existing",
+      statuspageIncidentComponents: "comp-1",
+    });
+    const service = new StatuspageIncidentService({ apiKey: "", pageId: "" });
+    await syncIncidents({ state, byName, incidentService: service, kv });
+
+    expect(mockCreateIncident).not.toHaveBeenCalled();
+    expect(mockUpdateIncident).not.toHaveBeenCalled();
+  });
+
+  it("should resolve the incident and clean up KV", async () => {
     const state: UptimeState = [
       {
         name: "api",
@@ -128,6 +166,7 @@ describe("syncIncidents", () => {
       body: "All services have recovered.",
     });
     expect(kv.delete).toHaveBeenCalledWith("statuspageIncidentId");
+    expect(kv.delete).toHaveBeenCalledWith("statuspageIncidentComponents");
   });
 
   it("should do nothing when all monitors are up and no active incident", async () => {
