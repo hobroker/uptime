@@ -2,5 +2,5 @@
 export const UPTIME_KV_KEYS = {
   state: "state",
   lastChecked: "lastChecked",
-  lastNotificationOfDowntime: "lastNotificationOfDowntime",
+  telegramDowntimeMessageId: "telegramDowntimeMessageId",
 } as const;

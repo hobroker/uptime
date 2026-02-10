@@ -45,13 +45,12 @@ const state: CheckResultList = [
 ];
 
 describe("StatuspageChannel", () => {
-  const channel = new StatuspageChannel();
-
   it("should skip when Statuspage is not configured", async () => {
     const env = createEnv();
     env.STATUSPAGE_IO_API_KEY = "" as string;
 
-    await channel.notify({ state, env });
+    const channel = new StatuspageChannel({ state, env });
+    await channel.notify();
 
     expect(mockSyncComponents).not.toHaveBeenCalled();
     expect(mockSyncIncidents).not.toHaveBeenCalled();
@@ -62,7 +61,8 @@ describe("StatuspageChannel", () => {
     mockSyncComponents.mockResolvedValue(byName);
 
     const env = createEnv();
-    await channel.notify({ state, env });
+    const channel = new StatuspageChannel({ state, env });
+    await channel.notify();
 
     expect(mockSyncComponents).toHaveBeenCalledWith({
       state,

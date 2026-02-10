@@ -4,7 +4,7 @@ export const performCheck = async (
   check: ResolvedCheckConfig,
   { env }: { env: Env },
 ) => {
-  console.log(`Checking ${check.name}...`);
+  console.log(`[performCheck] Checking ${check.name}...`);
   const state: CheckResult = {
     name: check.name,
     target: check.target,
@@ -36,7 +36,7 @@ export const performCheck = async (
 
       if (attempt < maxAttempts) {
         console.warn(
-          `${check.name} failed (attempt ${attempt}/${maxAttempts}), retrying...`,
+          `[performCheck] ${check.name} failed (attempt ${attempt}/${maxAttempts}), retrying...`,
         );
         continue;
       }
@@ -45,10 +45,10 @@ export const performCheck = async (
       state.error = errorMessage;
       return state;
     } catch (error) {
-      console.error(`${check.name} errored with`, error);
+      console.error(`[performCheck] ${check.name} errored with`, error);
       if (attempt < maxAttempts) {
         console.warn(
-          `${check.name} error (attempt ${attempt}/${maxAttempts}), retrying...`,
+          `[performCheck] ${check.name} error (attempt ${attempt}/${maxAttempts}), retrying...`,
         );
         continue;
       }
