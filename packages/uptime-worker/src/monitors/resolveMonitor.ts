@@ -7,6 +7,5 @@ export const resolveMonitor = (monitor: Monitor): ResolvedMonitor => {
     statusPageLink: monitor.statusPageLink || monitor.target,
     expectedCodes: monitor.expectedCodes || [200],
     timeout: monitor.timeout || 10000,
-    protectedByZeroTrust: monitor.protectedByZeroTrust || false,
   };
 };

@@ -48,13 +48,11 @@ describe("syncComponents", () => {
         name: "api",
         target: "https://api.example.com",
         status: "up",
-        protectedByZeroTrust: false,
       },
       {
         name: "new-svc",
         target: "https://new.example.com",
         status: "up",
-        protectedByZeroTrust: false,
       },
     ];
 
@@ -74,13 +72,11 @@ describe("syncComponents", () => {
         name: "api",
         target: "https://api.example.com",
         status: "down",
-        protectedByZeroTrust: false,
       },
       {
         name: "web",
         target: "https://web.example.com",
         status: "up",
-        protectedByZeroTrust: false,
       },
     ];
 
@@ -99,13 +95,11 @@ describe("syncComponents", () => {
         name: "api",
         target: "https://api.example.com",
         status: "up",
-        protectedByZeroTrust: false,
       },
       {
         name: "web",
         target: "https://web.example.com",
         status: "up",
-        protectedByZeroTrust: false,
       },
     ];
 
@@ -121,7 +115,6 @@ describe("syncComponents", () => {
         name: "api",
         target: "https://api.example.com",
         status: "up",
-        protectedByZeroTrust: false,
       },
     ];
 

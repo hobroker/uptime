@@ -29,7 +29,7 @@ const formatDowntimeMessage = (
 
   msg = msg.plain("\n\n");
 
-  report.downMonitors.forEach(({ name, target, protectedByZeroTrust }, i) => {
+  report.downMonitors.forEach(({ name, target, error }, i) => {
     if (i > 0) msg = msg.plain("\n");
 
     msg = msg.plain("🔴 ");
@@ -40,7 +40,7 @@ const formatDowntimeMessage = (
       msg = msg.b(name).plain(" (").plain(target).plain(")");
     }
 
-    msg = msg.plain(protectedByZeroTrust ? ": (protected by Zero Trust)" : "");
+    msg = msg.plain(error ? `: ${error}` : "");
   });
 
   return msg;

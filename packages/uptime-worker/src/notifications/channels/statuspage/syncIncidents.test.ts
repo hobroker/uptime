@@ -55,7 +55,6 @@ describe("buildIncidentData", () => {
         name: "api",
         target: "https://api.example.com",
         status: "down",
-        protectedByZeroTrust: false,
         error: "HTTP 500 Internal Server Error",
       },
     ];
@@ -76,13 +75,11 @@ describe("buildIncidentData", () => {
         name: "api",
         target: "https://api.example.com",
         status: "down",
-        protectedByZeroTrust: false,
       },
       {
         name: "web",
         target: "https://web.example.com",
         status: "down",
-        protectedByZeroTrust: false,
       },
     ];
 
@@ -100,7 +97,6 @@ describe("buildIncidentData", () => {
         name: "api",
         target: "https://api.example.com",
         status: "down",
-        protectedByZeroTrust: false,
       },
     ];
 
@@ -115,13 +111,11 @@ describe("buildIncidentData", () => {
         name: "web",
         target: "https://web.example.com",
         status: "down",
-        protectedByZeroTrust: false,
       },
       {
         name: "api",
         target: "https://api.example.com",
         status: "down",
-        protectedByZeroTrust: false,
       },
     ];
 
@@ -152,14 +146,12 @@ describe("syncIncidents", () => {
         name: "api",
         target: "https://api.example.com",
         status: "down",
-        protectedByZeroTrust: false,
         error: "HTTP 500 Internal Server Error",
       },
       {
         name: "web",
         target: "https://web.example.com",
         status: "up",
-        protectedByZeroTrust: false,
       },
     ];
 
@@ -180,13 +172,11 @@ describe("syncIncidents", () => {
         name: "api",
         target: "https://api.example.com",
         status: "down",
-        protectedByZeroTrust: false,
       },
       {
         name: "web",
         target: "https://web.example.com",
         status: "down",
-        protectedByZeroTrust: false,
       },
     ];
 
@@ -216,13 +206,11 @@ describe("syncIncidents", () => {
         name: "api",
         target: "https://api.example.com",
         status: "down",
-        protectedByZeroTrust: false,
       },
       {
         name: "web",
         target: "https://web.example.com",
         status: "up",
-        protectedByZeroTrust: false,
       },
     ];
 
@@ -248,13 +236,11 @@ describe("syncIncidents", () => {
         name: "api",
         target: "https://api.example.com",
         status: "up",
-        protectedByZeroTrust: false,
       },
       {
         name: "web",
         target: "https://web.example.com",
         status: "up",
-        protectedByZeroTrust: false,
       },
     ];
 
@@ -298,13 +284,11 @@ describe("syncIncidents", () => {
         name: "api",
         target: "https://api.example.com",
         status: "up",
-        protectedByZeroTrust: false,
       },
       {
         name: "web",
         target: "https://web.example.com",
         status: "up",
-        protectedByZeroTrust: false,
       },
     ];
 

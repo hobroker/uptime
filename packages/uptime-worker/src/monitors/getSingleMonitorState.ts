@@ -10,22 +10,13 @@ export const getSingleMonitorState = async (
     name: monitor.name,
     target: monitor.target,
     status: MonitorStatus.Up,
-    protectedByZeroTrust: false,
   };
 
   try {
     const response = await fetch(monitor.statusPageLink, {
       method: monitor.method,
-      body: monitor.body,
-      headers: {
-        ...monitor.headers,
-        ...(monitor.protectedByZeroTrust
-          ? {
-              "CF-Access-Client-Id": env.CF_ACCESS_CLIENT_ID,
-              "CF-Access-Client-Secret": env.CF_ACCESS_CLIENT_SECRET,
-            }
-          : {}),
-      },
+      body: monitor.body?.({ env }),
+      headers: monitor.headers?.({ env }),
       signal: AbortSignal.timeout(monitor.timeout),
     });
     const expectedCodes = monitor.expectedCodes;
@@ -37,7 +28,6 @@ export const getSingleMonitorState = async (
       response.headers.get("cf-access-domain") ||
       [401, 403].includes(response.status) // TODO handle `expectedCodes` here, sometimes it may be necessary to expect 401 or 403
     ) {
-      state.protectedByZeroTrust = true;
       state.status = MonitorStatus.Down;
       state.error = `Protected by Zero Trust (HTTP ${response.status})`;
     }

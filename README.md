@@ -115,8 +115,7 @@
          statusPageLink: "https://status.example.com", // Optional: URL to probe (defaults to target)
          expectedCodes: [200], // Optional: Expected HTTP status codes (defaults to [200])
          timeout: 5000, // Optional: Request timeout in ms (defaults to 5000)
-         protectedByZeroTrust: false, // Optional: Use CF Access client headers
-         headers: {}, // Optional: Additional headers to send with the request
+         headers: undefined, // Optional: Additional headers to send with the request
          body: undefined, // Optional: Body to send with the request (for POST or PUT requests)
        },
        // Add more monitors as needed
