@@ -49,7 +49,7 @@ export const uptimeWorkerConfig: UptimeWorkerConfig = {
     },
     {
       name: "http-echos-echo",
-      target: "https://demo2.hobroker.me",
+      target: "https://demo.hobroker.me",
       protectedByZeroTrust: true,
     },
   ],

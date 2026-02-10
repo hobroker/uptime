@@ -1,13 +1,10 @@
 import {
   StatuspageComponentService,
   StatuspageIncidentService,
-} from "../../services/statuspage";
-import { syncComponents } from "../../statuspage/syncComponents";
-import { syncIncidents } from "../../statuspage/syncIncidents";
-import type {
-  NotificationChannel,
-  NotificationContext,
-} from "../NotificationChannel";
+} from "./services";
+import { syncComponents } from "./syncComponents";
+import { syncIncidents } from "./syncIncidents";
+import type { NotificationChannel, NotificationContext } from "../../types";
 
 export class StatuspageChannel implements NotificationChannel {
   name = "statuspage";

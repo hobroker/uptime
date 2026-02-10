@@ -2,10 +2,10 @@ import {
   StatuspageIncidentService,
   type StatuspageComponent,
   type StatuspageIncident,
-} from "../services/statuspage";
-import type { UptimeState } from "../types";
-import { buildDowntimeReport } from "../notifications/buildDowntimeReport";
-import { sleep } from "../util/sleep";
+} from "./services";
+import type { UptimeState } from "../../../types";
+import { buildDowntimeMessage } from "../../messages";
+import { sleep } from "../../../util/sleep";
 
 interface IncidentData {
   name: string;
@@ -19,7 +19,7 @@ export const buildIncidentData = (
   downMonitors: UptimeState,
   byName: Map<string, StatuspageComponent>,
 ): IncidentData => {
-  const report = buildDowntimeReport(downMonitors);
+  const report = buildDowntimeMessage(downMonitors);
 
   const componentIds = downMonitors
     .map((m) => byName.get(m.name)?.id)
@@ -53,7 +53,7 @@ const createIncident = async ({
 }): Promise<void> => {
   console.log("Statuspage: creating incident for down monitors");
   await sleep(1100);
-  const incident = await incidentService.createIncident({
+  await incidentService.createIncident({
     name: data.name,
     status: "investigating",
     body: data.body,

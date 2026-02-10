@@ -4,8 +4,8 @@ import {
   buildPostmortemBody,
   syncIncidents,
 } from "./syncIncidents";
-import { UptimeState } from "../types";
-import type { StatuspageComponent } from "../services/statuspage";
+import { UptimeState } from "../../../types";
+import type { StatuspageComponent } from "./services";
 
 vi.stubGlobal("setTimeout", (fn: () => void) => {
   fn();
@@ -19,7 +19,7 @@ const mockUpdateIncident = vi.fn();
 const mockCreatePostmortem = vi.fn();
 const mockPublishPostmortem = vi.fn();
 
-vi.mock("../services/statuspage", () => ({
+vi.mock("./services", () => ({
   StatuspageIncidentService: class {
     getIncident = mockGetIncident;
     listUnresolvedIncidents = mockListUnresolvedIncidents;
@@ -30,7 +30,7 @@ vi.mock("../services/statuspage", () => ({
   },
 }));
 
-const { StatuspageIncidentService } = await import("../services/statuspage");
+const { StatuspageIncidentService } = await import("./services");
 
 const byName = new Map<string, StatuspageComponent>([
   ["api", { id: "comp-1", name: "api", status: "operational" }],

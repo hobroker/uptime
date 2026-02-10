@@ -1,11 +1,8 @@
 import { FormattedString } from "@grammyjs/parse-mode";
-import { UPTIME_KV_KEYS } from "../../kvKeys";
-import { TelegramService } from "../../services/TelegramService";
-import type {
-  NotificationChannel,
-  NotificationContext,
-} from "../NotificationChannel";
-import { buildDowntimeReport } from "../buildDowntimeReport";
+import { UPTIME_KV_KEYS } from "../../../kvKeys";
+import { TelegramService } from "./TelegramService";
+import type { NotificationChannel, NotificationContext } from "../../types";
+import { buildDowntimeMessage, type DowntimeMessage } from "../../messages";
 
 const STATUSPAGE_URL = "https://hobroker.statuspage.io/";
 
@@ -18,9 +15,7 @@ const isHttpUrl = (value: string) => {
   }
 };
 
-const formatDowntimeMessage = (
-  report: ReturnType<typeof buildDowntimeReport>,
-) => {
+const formatDowntimeMessage = (report: DowntimeMessage) => {
   let msg = new FormattedString("");
   msg = msg.link(`⚠️ ${report.title} ⚠️`, STATUSPAGE_URL);
   msg = msg.plain("\n\n");
@@ -42,6 +37,12 @@ const formatDowntimeMessage = (
   return msg;
 };
 
+const formatRecoveryMessage = () =>
+  new FormattedString("✅ All monitors are up and running!\n").link(
+    "Status page",
+    STATUSPAGE_URL,
+  );
+
 export class TelegramChannel implements NotificationChannel {
   name = "telegram";
 
@@ -53,7 +54,8 @@ export class TelegramChannel implements NotificationChannel {
     const lastNotificationOfDowntime = await env.uptime.get(
       UPTIME_KV_KEYS.lastNotificationOfDowntime,
     );
-    const isAnyMonitorDown = state.some((monitor) => monitor.status === "down");
+    const downMonitors = state.filter((m) => m.status === "down");
+    const isAnyMonitorDown = downMonitors.length > 0;
 
     // if we already sent a notification, check if the state has changed
     if (lastNotificationOfDowntime) {
@@ -67,15 +69,11 @@ export class TelegramChannel implements NotificationChannel {
 
       await env.uptime.put(UPTIME_KV_KEYS.lastNotificationOfDowntime, "");
 
-      // we notified about downtime, but now all monitors are up
-      // so we can send a message that everything is back to normal
-      const recoveryMessage = new FormattedString(
-        "✅ All monitors are up and running!\n",
-      ).link("Status page", STATUSPAGE_URL);
+      console.log(`Telegram: sending recovery message`);
 
       await telegramService.sendMessage({
         chatId: env.TELEGRAM_CHAT_ID,
-        message: recoveryMessage,
+        message: formatRecoveryMessage(),
         options: {
           reply_parameters: {
             message_id: parseInt(lastNotificationOfDowntime, 10),
@@ -96,8 +94,9 @@ export class TelegramChannel implements NotificationChannel {
     }
 
     // no previous notification, so we can send a message if at least one monitor is down
-    const report = buildDowntimeReport(state);
-    const formatted = formatDowntimeMessage(report);
+    const downtime = buildDowntimeMessage(downMonitors);
+    console.log(`Telegram: sending ${downtime.type} message`);
+    const formatted = formatDowntimeMessage(downtime);
     const message = await telegramService.sendMessage({
       chatId: env.TELEGRAM_CHAT_ID,
       message: formatted,

@@ -1,7 +1,4 @@
-import type {
-  NotificationChannel,
-  NotificationContext,
-} from "./NotificationChannel";
+import type { NotificationChannel, NotificationContext } from "./types";
 
 export class NotificationService {
   private channels: NotificationChannel[];

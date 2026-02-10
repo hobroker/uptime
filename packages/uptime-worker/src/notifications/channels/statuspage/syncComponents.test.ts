@@ -1,6 +1,6 @@
 import { vi } from "vitest";
 import { syncComponents } from "./syncComponents";
-import { UptimeState } from "../types";
+import { UptimeState } from "../../../types";
 
 vi.stubGlobal("setTimeout", (fn: () => void) => {
   fn();
@@ -11,7 +11,7 @@ const mockListComponents = vi.fn();
 const mockCreateComponent = vi.fn();
 const mockUpdateComponentStatus = vi.fn();
 
-vi.mock("../services/statuspage", () => ({
+vi.mock("./services", () => ({
   StatuspageComponentService: class {
     listComponents = mockListComponents;
     createComponent = mockCreateComponent;
@@ -19,7 +19,7 @@ vi.mock("../services/statuspage", () => ({
   },
 }));
 
-const { StatuspageComponentService } = await import("../services/statuspage");
+const { StatuspageComponentService } = await import("./services");
 
 const existingComponents = [
   { id: "comp-1", name: "api", status: "operational" },

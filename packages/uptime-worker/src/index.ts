@@ -1,7 +1,7 @@
 import { getMonitorsState } from "./monitors/getMonitorsState";
 import { NotificationService } from "./notifications/NotificationService";
-import { StatuspageChannel } from "./notifications/channels/StatuspageChannel";
-import { TelegramChannel } from "./notifications/channels/TelegramChannel";
+import { StatuspageChannel } from "./notifications/channels/statuspage/StatuspageChannel";
+import { TelegramChannel } from "./notifications/channels/telegram/TelegramChannel";
 import { updateUptimeKV } from "./storage/updateUptimeKV";
 import { uptimeWorkerConfig } from "../../../uptime.config";
 

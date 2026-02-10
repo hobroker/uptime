@@ -1,6 +1,6 @@
 import { vi } from "vitest";
-import { StatuspageChannel } from "../notifications/channels/StatuspageChannel";
-import { UptimeState } from "../types";
+import { StatuspageChannel } from "./StatuspageChannel";
+import { UptimeState } from "../../../types";
 
 vi.stubGlobal("setTimeout", (fn: () => void) => {
   fn();
@@ -18,7 +18,7 @@ vi.mock("./syncIncidents", () => ({
   syncIncidents: (...args: unknown[]) => mockSyncIncidents(...args),
 }));
 
-vi.mock("../services/statuspage", () => ({
+vi.mock("./services", () => ({
   StatuspageComponentService: class {},
   StatuspageIncidentService: class {},
 }));
