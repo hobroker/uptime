@@ -5,7 +5,6 @@ import {
 } from "./services";
 import type { UptimeState } from "../../../types";
 import { buildDowntimeMessage } from "../../messages";
-import { sleep } from "../../../util/sleep";
 
 interface IncidentData {
   name: string;
@@ -52,7 +51,6 @@ const createIncident = async ({
   incidentService: StatuspageIncidentService;
 }): Promise<void> => {
   console.log("Statuspage: creating incident for down monitors");
-  await sleep(1100);
   await incidentService.createIncident({
     name: data.name,
     status: "investigating",
@@ -72,7 +70,6 @@ const updateIncident = async ({
   incidentService: StatuspageIncidentService;
 }): Promise<void> => {
   console.log("Statuspage: updating existing incident with current state");
-  await sleep(1100);
   await incidentService.updateIncident(incidentId, {
     name: data.name,
     body: data.body,
@@ -96,7 +93,6 @@ const resolveIncident = async ({
     latestUpdate?.body || "One or more services experienced a disruption.";
 
   console.log("Statuspage: resolving incident, all monitors are up");
-  await sleep(1100);
   await incidentService.updateIncident(incidentId, {
     status: "resolved",
     body: "All services have recovered.",
@@ -105,11 +101,9 @@ const resolveIncident = async ({
   const postmortemBody = buildPostmortemBody(incidentDetails);
 
   console.log("Statuspage: creating postmortem");
-  await sleep(1100);
   await incidentService.createPostmortem(incidentId, {
     body: postmortemBody,
   });
-  await sleep(1100);
   await incidentService.publishPostmortem(incidentId);
 };
 
