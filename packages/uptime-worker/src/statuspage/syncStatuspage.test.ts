@@ -5,7 +5,7 @@ import { UptimeState } from "../types";
 // Make sleep() resolve instantly
 vi.stubGlobal("setTimeout", (fn: () => void) => {
   fn();
-  return 0 as unknown as ReturnType<typeof setTimeout>;
+  return 0;
 });
 
 // --- Mocks ---
@@ -16,11 +16,13 @@ const mockUpdateComponentStatus = vi.fn();
 const mockCreateIncident = vi.fn();
 const mockUpdateIncident = vi.fn();
 
-vi.mock("../services/StatuspageService", () => ({
-  StatuspageService: class {
+vi.mock("../services/statuspage", () => ({
+  StatuspageComponentService: class {
     listComponents = mockListComponents;
     createComponent = mockCreateComponent;
     updateComponentStatus = mockUpdateComponentStatus;
+  },
+  StatuspageIncidentService: class {
     createIncident = mockCreateIncident;
     updateIncident = mockUpdateIncident;
   },
@@ -48,7 +50,7 @@ const createEnv = (kvInit: Record<string, string> = {}) => {
     STATUSPAGE_IO_API_KEY: "test-key",
     STATUSPAGE_IO_PAGE_ID: "test-page",
     uptime: kv,
-  } as unknown as Env;
+  };
 };
 
 // Pre-existing components returned by listComponents
@@ -231,7 +233,7 @@ describe("syncStatuspage - incident management", () => {
     ];
 
     const env = createEnv();
-    (env as Record<string, unknown>).STATUSPAGE_IO_API_KEY = "";
+    env.STATUSPAGE_IO_API_KEY = "";
 
     await syncStatuspage(state, { env });
 

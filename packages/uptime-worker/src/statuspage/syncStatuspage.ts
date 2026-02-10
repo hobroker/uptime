@@ -1,4 +1,7 @@
-import { StatuspageService } from "../services/StatuspageService";
+import {
+  StatuspageComponentService,
+  StatuspageIncidentService,
+} from "../services/statuspage";
 import type { UptimeState } from "../types";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -10,12 +13,14 @@ const mapMonitorStatusToComponent = (
 };
 
 /**
- * Syncs current monitor state to Statuspage by mapping each monitor to a component.
+ * Syncs current monitor state to Statuspage by mapping each monitor to a component
+ * and managing incidents when services go down or recover.
  *
  * Strategy:
  * - component name == monitor.name
  * - ensure component exists; create if missing
  * - update component status to operational/major_outage
+ * - create/update/resolve a grouped incident for all down monitors
  *
  * Notes:
  * - Statuspage API is rate limited to ~1 req/sec per token. We deliberately sleep between calls.
@@ -31,13 +36,15 @@ export const syncStatuspage = async (
     return;
   }
 
-  const statuspage = new StatuspageService({
+  const config = {
     apiKey: env.STATUSPAGE_IO_API_KEY,
     pageId: env.STATUSPAGE_IO_PAGE_ID,
-  });
+  };
+  const componentService = new StatuspageComponentService(config);
+  const incidentService = new StatuspageIncidentService(config);
 
   // Pull components once
-  const components = await statuspage.listComponents();
+  const components = await componentService.listComponents();
   const byName = new Map(components.map((c) => [c.name, c]));
 
   for (const monitor of state) {
@@ -46,7 +53,7 @@ export const syncStatuspage = async (
     let component = byName.get(monitor.name);
     if (!component) {
       console.log(`Statuspage: creating component '${monitor.name}'`);
-      component = await statuspage.createComponent({
+      component = await componentService.createComponent({
         name: monitor.name,
         status: desired,
       });
@@ -59,7 +66,7 @@ export const syncStatuspage = async (
       console.log(
         `Statuspage: updating component '${monitor.name}' ${component.status} -> ${desired}`,
       );
-      component = await statuspage.updateComponentStatus({
+      component = await componentService.updateComponentStatus({
         componentId: component.id,
         status: desired,
       });
@@ -89,7 +96,7 @@ export const syncStatuspage = async (
     if (!activeIncidentId) {
       console.log("Statuspage: creating incident for down monitors");
       await sleep(1100);
-      const incident = await statuspage.createIncident({
+      const incident = await incidentService.createIncident({
         name: "Service disruption",
         status: "investigating",
         body,
@@ -99,7 +106,7 @@ export const syncStatuspage = async (
     } else {
       console.log("Statuspage: updating existing incident with current state");
       await sleep(1100);
-      await statuspage.updateIncident(activeIncidentId, {
+      await incidentService.updateIncident(activeIncidentId, {
         body,
         components: affectedComponents,
       });
@@ -113,7 +120,7 @@ export const syncStatuspage = async (
 
     console.log("Statuspage: resolving incident, all monitors are up");
     await sleep(1100);
-    await statuspage.updateIncident(activeIncidentId, {
+    await incidentService.updateIncident(activeIncidentId, {
       status: "resolved",
       body: "All services have recovered.",
       components: operationalComponents,

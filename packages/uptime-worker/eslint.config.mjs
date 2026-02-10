@@ -30,6 +30,6 @@ export default defineConfig(
     },
   },
   {
-    ignores: ["**/worker-configuration.d.ts"],
+    ignores: ["**/worker-configuration.d.ts", ".wrangler/**"],
   },
 );
