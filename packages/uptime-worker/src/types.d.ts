@@ -1,15 +1,15 @@
-export type MonitorStatus = "up" | "down";
+export type CheckStatus = "up" | "down";
 
-interface UptimeStateMonitor {
+interface CheckResult {
   name: string;
   target: string;
-  status: MonitorStatus;
+  status: CheckStatus;
   error?: string;
 }
 
-export type UptimeState = UptimeStateMonitor[];
+export type CheckResultList = CheckResult[];
 
-export interface Monitor {
+export interface CheckConfig {
   name: string;
   target: string;
   method?: string; // default GET
@@ -20,7 +20,7 @@ export interface Monitor {
   body?: (args: { env: Env }) => BodyInit; // body to send with the request
 }
 
-export interface ResolvedMonitor extends Monitor {
+export interface ResolvedCheckConfig extends CheckConfig {
   method: string;
   statusPageLink: string;
   expectedCodes: number[];
@@ -28,6 +28,6 @@ export interface ResolvedMonitor extends Monitor {
 }
 
 export interface UptimeWorkerConfig {
-  monitors: Monitor[];
+  checks: CheckConfig[];
   statuspageUrl?: string;
 }

@@ -1,4 +1,4 @@
-import { getMonitorsState } from "./monitors/getMonitorsState";
+import { runChecks } from "./checks/runChecks";
 import { NotificationService } from "./notifications/NotificationService";
 import { StatuspageChannel } from "./notifications/channels/statuspage/StatuspageChannel";
 import { TelegramChannel } from "./notifications/channels/telegram/TelegramChannel";
@@ -25,8 +25,8 @@ export default {
     env: Env,
     ctx: ExecutionContext,
   ): Promise<void> {
-    // Get the current state of all monitors
-    const state = await getMonitorsState(uptimeWorkerConfig, { env });
+    // Get the current state of all checks
+    const state = await runChecks(uptimeWorkerConfig, { env });
 
     console.log("state", state);
 

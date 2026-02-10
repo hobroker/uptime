@@ -3,16 +3,16 @@ import {
   StatuspageComponentStatus,
   type StatuspageComponent,
 } from "./services";
-import type { MonitorStatus, UptimeState } from "../../../types";
+import type { CheckStatus, CheckResultList } from "../../../types";
 
-const mapMonitorStatusToComponent = (
-  status: MonitorStatus,
+const mapCheckStatusToComponent = (
+  status: CheckStatus,
 ): StatuspageComponentStatus => {
   return status === "up" ? "operational" : "major_outage";
 };
 
 /**
- * Ensures each monitor has a matching Statuspage component with the correct status.
+ * Ensures each check has a matching Statuspage component with the correct status.
  *
  * Returns a name->component map for use by incident management.
  */
@@ -20,20 +20,20 @@ export const syncComponents = async ({
   state,
   componentService,
 }: {
-  state: UptimeState;
+  state: CheckResultList;
   componentService: StatuspageComponentService;
 }): Promise<Map<string, StatuspageComponent>> => {
   const components = await componentService.listComponents();
   const byName = new Map(components.map((c) => [c.name, c]));
 
-  for (const monitor of state) {
-    const desired = mapMonitorStatusToComponent(monitor.status);
+  for (const check of state) {
+    const desired = mapCheckStatusToComponent(check.status);
 
-    let component = byName.get(monitor.name);
+    let component = byName.get(check.name);
     if (!component) {
-      console.log(`Statuspage: creating component '${monitor.name}'`);
+      console.log(`Statuspage: creating component '${check.name}'`);
       component = await componentService.createComponent({
-        name: monitor.name,
+        name: check.name,
         status: desired,
       });
       byName.set(component.name, component);
@@ -42,7 +42,7 @@ export const syncComponents = async ({
 
     if (component.status !== desired) {
       console.log(
-        `Statuspage: updating component '${monitor.name}' ${component.status} -> ${desired}`,
+        `Statuspage: updating component '${check.name}' ${component.status} -> ${desired}`,
       );
       component = await componentService.updateComponentStatus({
         componentId: component.id,

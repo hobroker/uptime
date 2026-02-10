@@ -4,7 +4,7 @@ import {
   buildPostmortemBody,
   syncIncidents,
 } from "./syncIncidents";
-import { UptimeState } from "../../../types";
+import { CheckResultList } from "../../../types";
 import type { StatuspageComponent } from "./services";
 
 vi.stubGlobal("setTimeout", (fn: () => void) => {
@@ -50,7 +50,7 @@ beforeEach(() => {
 
 describe("buildIncidentData", () => {
   it("should return single-service name when one monitor is down", () => {
-    const down: UptimeState = [
+    const down: CheckResultList = [
       {
         name: "api",
         target: "https://api.example.com",
@@ -70,7 +70,7 @@ describe("buildIncidentData", () => {
   });
 
   it("should return multi-service name when multiple monitors are down", () => {
-    const down: UptimeState = [
+    const down: CheckResultList = [
       {
         name: "api",
         target: "https://api.example.com",
@@ -92,7 +92,7 @@ describe("buildIncidentData", () => {
   });
 
   it("should omit error detail when error is not set", () => {
-    const down: UptimeState = [
+    const down: CheckResultList = [
       {
         name: "api",
         target: "https://api.example.com",
@@ -106,7 +106,7 @@ describe("buildIncidentData", () => {
   });
 
   it("should sort component IDs in the componentsKey", () => {
-    const down: UptimeState = [
+    const down: CheckResultList = [
       {
         name: "web",
         target: "https://web.example.com",
@@ -141,7 +141,7 @@ describe("buildPostmortemBody", () => {
 
 describe("syncIncidents", () => {
   it("should create an incident when monitors go down", async () => {
-    const state: UptimeState = [
+    const state: CheckResultList = [
       {
         name: "api",
         target: "https://api.example.com",
@@ -167,7 +167,7 @@ describe("syncIncidents", () => {
   });
 
   it("should update the existing incident when affected components change", async () => {
-    const state: UptimeState = [
+    const state: CheckResultList = [
       {
         name: "api",
         target: "https://api.example.com",
@@ -201,7 +201,7 @@ describe("syncIncidents", () => {
   });
 
   it("should skip update when affected components have not changed", async () => {
-    const state: UptimeState = [
+    const state: CheckResultList = [
       {
         name: "api",
         target: "https://api.example.com",
@@ -231,7 +231,7 @@ describe("syncIncidents", () => {
   });
 
   it("should resolve the incident, create postmortem, and clean up KV", async () => {
-    const state: UptimeState = [
+    const state: CheckResultList = [
       {
         name: "api",
         target: "https://api.example.com",
@@ -279,7 +279,7 @@ describe("syncIncidents", () => {
   });
 
   it("should do nothing when all monitors are up and no active incident", async () => {
-    const state: UptimeState = [
+    const state: CheckResultList = [
       {
         name: "api",
         target: "https://api.example.com",

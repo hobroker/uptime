@@ -29,7 +29,7 @@ const formatDowntimeMessage = (
 
   msg = msg.plain("\n\n");
 
-  report.downMonitors.forEach(({ name, target, error }, i) => {
+  report.failedChecks.forEach(({ name, target, error }, i) => {
     if (i > 0) msg = msg.plain("\n");
 
     msg = msg.plain("🔴 ");
@@ -47,7 +47,7 @@ const formatDowntimeMessage = (
 };
 
 const formatRecoveryMessage = (statusPageUrl?: string) => {
-  const message = new FormattedString("✅ All monitors are up and running!\n");
+  const message = new FormattedString("✅ All checks are up and running!\n");
 
   if (statusPageUrl) {
     return message.link("Status page", statusPageUrl);
@@ -69,12 +69,12 @@ export class TelegramChannel implements NotificationChannel {
     const lastNotificationOfDowntime = await env.uptime.get(
       UPTIME_KV_KEYS.lastNotificationOfDowntime,
     );
-    const downMonitors = state.filter((m) => m.status === "down");
-    const isAnyMonitorDown = downMonitors.length > 0;
+    const failedChecks = state.filter((c) => c.status === "down");
+    const isAnyCheckDown = failedChecks.length > 0;
 
     // if we already sent a notification, check if the status has changed
     if (lastNotificationOfDowntime) {
-      if (isAnyMonitorDown) {
+      if (isAnyCheckDown) {
         // we already notified about downtime
         console.log(
           "[TelegramChannel] Already notified via Telegram about downtime, skipping notification",
@@ -97,21 +97,21 @@ export class TelegramChannel implements NotificationChannel {
       });
 
       console.log(
-        "[TelegramChannel] All monitors are up, sent Telegram notification about recovery",
+        "[TelegramChannel] All checks are up, sent Telegram notification about recovery",
       );
       return;
     }
 
-    if (!isAnyMonitorDown) {
-      // no monitors are down, so we don't need to send a notification
+    if (!isAnyCheckDown) {
+      // no checks are down, so we don't need to send a notification
       console.log(
-        "[TelegramChannel] No monitors are down, skipping Telegram notification",
+        "[TelegramChannel] No checks are down, skipping Telegram notification",
       );
       return;
     }
 
-    // no previous notification, so we can send a message if at least one monitor is down
-    const downtime = buildDowntimeMessage(downMonitors);
+    // no previous notification, so we can send a message if at least one check is down
+    const downtime = buildDowntimeMessage(failedChecks);
     console.log(`[TelegramChannel] sending ${downtime.type} message`);
     const formatted = formatDowntimeMessage(downtime, statusPageUrl);
     const message = await telegramService.sendMessage({

@@ -1,24 +1,24 @@
-import { ResolvedMonitor, UptimeStateMonitor } from "../types";
+import { ResolvedCheckConfig, CheckResult } from "../types";
 
-export const getSingleMonitorState = async (
-  monitor: ResolvedMonitor,
+export const performCheck = async (
+  check: ResolvedCheckConfig,
   { env }: { env: Env },
 ) => {
-  console.log(`Checking ${monitor.name}...`);
-  const state: UptimeStateMonitor = {
-    name: monitor.name,
-    target: monitor.target,
+  console.log(`Checking ${check.name}...`);
+  const state: CheckResult = {
+    name: check.name,
+    target: check.target,
     status: "up",
   };
 
   try {
-    const response = await fetch(monitor.statusPageLink, {
-      method: monitor.method,
-      body: monitor.body?.({ env }),
-      headers: monitor.headers?.({ env }),
-      signal: AbortSignal.timeout(monitor.timeout),
+    const response = await fetch(check.statusPageLink, {
+      method: check.method,
+      body: check.body?.({ env }),
+      headers: check.headers?.({ env }),
+      signal: AbortSignal.timeout(check.timeout),
     });
-    const expectedCodes = monitor.expectedCodes;
+    const expectedCodes = check.expectedCodes;
     if (!expectedCodes.includes(response.status)) {
       state.status = "down";
       state.error = `HTTP ${response.status} ${response.statusText}`;
@@ -32,7 +32,7 @@ export const getSingleMonitorState = async (
     }
     return state;
   } catch (error) {
-    console.error(`${monitor.name} errored with`, error);
+    console.error(`${check.name} errored with`, error);
     state.status = "down";
     state.error = error instanceof Error ? error.message : "Unknown error";
     return state;

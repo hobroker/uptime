@@ -1,6 +1,6 @@
 import { vi } from "vitest";
 import { StatuspageChannel } from "./StatuspageChannel";
-import { UptimeState } from "../../../types";
+import { CheckResultList } from "../../../types";
 
 vi.stubGlobal("setTimeout", (fn: () => void) => {
   fn();
@@ -36,7 +36,7 @@ const createEnv = () =>
     uptime: {},
   }) as unknown as Env;
 
-const state: UptimeState = [
+const state: CheckResultList = [
   {
     name: "api",
     target: "https://api.example.com",
