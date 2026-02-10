@@ -1,8 +1,8 @@
-import { Monitor, UptimeStateMonitor } from "../types";
+import { ResolvedMonitor, UptimeStateMonitor } from "../types";
 import { MonitorStatus } from "../constants";
 
 export const getSingleMonitorState = async (
-  monitor: Monitor,
+  monitor: ResolvedMonitor,
   { env }: { env: Env },
 ) => {
   console.log(`Checking ${monitor.name}...`);
@@ -14,8 +14,8 @@ export const getSingleMonitorState = async (
   };
 
   try {
-    const response = await fetch(monitor.statusPageLink || monitor.target, {
-      method: monitor.method || "GET",
+    const response = await fetch(monitor.statusPageLink, {
+      method: monitor.method,
       body: monitor.body,
       headers: {
         ...monitor.headers,
@@ -26,9 +26,9 @@ export const getSingleMonitorState = async (
             }
           : {}),
       },
-      signal: AbortSignal.timeout(monitor.timeout || 5000),
+      signal: AbortSignal.timeout(monitor.timeout),
     });
-    const expectedCodes = monitor.expectedCodes || [200];
+    const expectedCodes = monitor.expectedCodes;
     if (!expectedCodes.includes(response.status)) {
       state.status = MonitorStatus.Down;
       state.error = `HTTP ${response.status} ${response.statusText}`;

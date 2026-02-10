@@ -20,6 +20,14 @@ export interface Monitor {
   body?: BodyInit; // body to send with the request
 }
 
+export interface ResolvedMonitor extends Monitor {
+  method: string;
+  statusPageLink: string;
+  expectedCodes: number[];
+  timeout: number;
+  protectedByZeroTrust: boolean;
+}
+
 export interface UptimeWorkerConfig {
   monitors: Monitor[];
   statuspageUrl?: string;
