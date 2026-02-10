@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Made with TypeScript](https://img.shields.io/badge/Made%20with-TypeScript-blue)](https://www.typescriptlang.org/)
 
-**Uptime** is a lightweight, serverless monitoring service built on **Cloudflare Workers**. It runs on a cron schedule, checks a configurable list of endpoints, stores the latest state in **Workers KV**, and sends **Telegram** alerts on downtime and recovery. Optionally, it can sync component status to **Statuspage.io**.
+**Uptime** is a lightweight, serverless monitoring service built on **Cloudflare Workers**. It runs on a cron schedule, performs a configurable list of health **checks**, stores the latest state in **Workers KV**, and sends **Telegram** alerts on downtime and recovery. Optionally, it can sync component status to **Statuspage.io**.
 
 ## Table of Contents
 
@@ -25,20 +25,20 @@
 
 ## Features
 
-- **Active Monitoring**: Periodically checks the availability of configured websites.
+- **Active Monitoring**: Periodically checks the availability of configured targets.
 - **Serverless**: Runs on Cloudflare Workers with minimal infrastructure overhead.
-- **Telegram Alerts**: Sends a single downtime alert per incident and a recovery message when all monitors are healthy again.
-- **Statuspage Sync (Optional)**: Maps each monitor to a Statuspage component and updates its status.
+- **Telegram Alerts**: Sends a single downtime alert per incident and a recovery message when all checks are healthy again.
+- **Statuspage Sync (Optional)**: Maps each check to a Statuspage component and updates its status.
 - **Zero Trust Support**: Works with sites behind Cloudflare Zero Trust via client credentials.
 
 ## How It Works
 
-1. Configure a list of monitors in `uptime.config.ts`.
+1. Configure a list of checks in `uptime.config.ts`.
 2. A scheduled Cloudflare Worker runs on a cron defined in `packages/uptime-worker/wrangler.jsonc`.
-3. Each monitor is checked; results are stored in Workers KV (state + last-checked timestamp).
-4. If any monitor is down, a single Telegram alert is sent and subsequent alerts are suppressed for that incident.
-5. When all monitors recover, a Telegram recovery message is sent.
-6. If Statuspage.io credentials are configured, each monitor is synced to a Statuspage component.
+3. Each check is performed; results are stored in Workers KV (state + last-checked timestamp).
+4. If any check fails, a single Telegram alert is sent and subsequent alerts are suppressed for that incident.
+5. When all checks recover, a Telegram recovery message is sent.
+6. If Statuspage.io credentials are configured, each check is synced to a Statuspage component.
 
 ## Tech Stack
 
@@ -59,7 +59,7 @@
 
 ### Environment Setup
 
-1. Create a KV namespace for storing monitor states:
+1. Create a KV namespace for storing check states:
    ```shell
    cd packages/uptime-worker/
    npx wrangler kv namespace uptime
@@ -105,10 +105,10 @@
    ```shell
    npm run cf-typegen
    ```
-4. Configure your list of websites to monitor in the [configuration file](uptime.config.ts). Example:
+4. Configure your list of targets to check in the [configuration file](uptime.config.ts). Example:
    ```typescript
    export default {
-     monitors: [
+     checks: [
        {
          name: "Example Site",
          target: "https://example.com",
@@ -118,7 +118,7 @@
          headers: undefined, // Optional: Additional headers to send with the request
          body: undefined, // Optional: Body to send with the request (for POST or PUT requests)
        },
-       // Add more monitors as needed
+       // Add more checks as needed
      ],
    };
    ```
@@ -172,7 +172,7 @@ To enable automatic deployments from GitHub Actions, you'll need to set up a Clo
 
 ## Usage
 
-Once deployed, Uptime will automatically run on the configured cron schedule, check the monitors in `uptime.config.ts`, and send Telegram notifications based on state changes.
+Once deployed, Uptime will automatically run on the configured cron schedule, perform the checks in `uptime.config.ts`, and send Telegram notifications based on state changes.
 
 ### Example Telegram message
 
