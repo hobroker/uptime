@@ -5,11 +5,6 @@ import { TelegramChannel } from "./notifications/channels/telegram/TelegramChann
 import { updateUptimeKV } from "./storage/updateUptimeKV";
 import { uptimeWorkerConfig } from "../uptime.config";
 
-const notificationService = new NotificationService([
-  new StatuspageChannel(),
-  new TelegramChannel(),
-]);
-
 export default {
   async fetch(req: Request) {
     const url = new URL(req.url);
@@ -33,8 +28,12 @@ export default {
     // Update the KV store with the new state
     await updateUptimeKV(state, { env });
 
+    const notificationService = new NotificationService([
+      new StatuspageChannel({ state, env }),
+      new TelegramChannel({ state, env }),
+    ]);
     // Notify all channels (Statuspage, Telegram, etc.)
-    await notificationService.notifyAll({ state, env });
+    await notificationService.notifyAll();
 
     // Keep the cron string for debugging; controller.cron is provided by Workers runtime
     console.log(`[scheduled] trigger fired at ${controller.cron}`);

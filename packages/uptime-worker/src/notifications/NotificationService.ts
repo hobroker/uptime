@@ -1,4 +1,4 @@
-import type { NotificationChannel, NotificationContext } from "./types";
+import { NotificationChannel } from "./NotificationChannel";
 
 export class NotificationService {
   private channels: NotificationChannel[];
@@ -7,9 +7,9 @@ export class NotificationService {
     this.channels = channels;
   }
 
-  async notifyAll(context: NotificationContext): Promise<void> {
+  async notifyAll(): Promise<void> {
     const results = await Promise.allSettled(
-      this.channels.map((channel) => channel.notify(context)),
+      this.channels.map((channel) => channel.notify()),
     );
 
     for (const [i, result] of results.entries()) {
