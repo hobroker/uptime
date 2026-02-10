@@ -27,6 +27,7 @@
   },
   "packageManager": "npm@11.9.0",
   "dependencies": {
+    "p-limit": "^7.3.0",
     "p-throttle": "^8.1.0"
   }
 }
