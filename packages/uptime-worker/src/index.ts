@@ -1,8 +1,14 @@
 import { getMonitorsState } from "./monitors/getMonitorsState";
-import { handleNotifications } from "./notifications/handleNotifications";
-import { syncStatuspage } from "./statuspage/syncStatuspage";
+import { NotificationService } from "./notifications/NotificationService";
+import { StatuspageChannel } from "./notifications/channels/StatuspageChannel";
+import { TelegramChannel } from "./notifications/channels/TelegramChannel";
 import { updateUptimeKV } from "./storage/updateUptimeKV";
 import { uptimeWorkerConfig } from "../../../uptime.config";
+
+const notificationService = new NotificationService([
+  new StatuspageChannel(),
+  new TelegramChannel(),
+]);
 
 export default {
   async fetch(req: Request) {
@@ -27,11 +33,8 @@ export default {
     // Update the KV store with the new state
     await updateUptimeKV(state, { env });
 
-    // Sync component statuses to Statuspage (if configured)
-    await syncStatuspage(state, { env });
-
-    // Send a Telegram message with the current state and if it was previously down, then notify of the change
-    await handleNotifications(state, { env });
+    // Notify all channels (Statuspage, Telegram, etc.)
+    await notificationService.notifyAll({ state, env });
 
     // Keep the cron string for debugging; controller.cron is provided by Workers runtime
     console.log(`trigger fired at ${controller.cron}`);

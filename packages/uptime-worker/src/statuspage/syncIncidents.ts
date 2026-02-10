@@ -4,6 +4,7 @@ import {
   type StatuspageIncident,
 } from "../services/statuspage";
 import type { UptimeState } from "../types";
+import { buildDowntimeReport } from "../notifications/buildDowntimeReport";
 import { sleep } from "../util/sleep";
 
 interface IncidentData {
@@ -18,28 +19,15 @@ export const buildIncidentData = (
   downMonitors: UptimeState,
   byName: Map<string, StatuspageComponent>,
 ): IncidentData => {
-  const componentIds: string[] = [];
-  const affectedLines: string[] = [];
+  const report = buildDowntimeReport(downMonitors);
 
-  for (const monitor of downMonitors) {
-    const comp = byName.get(monitor.name);
-    if (comp) {
-      componentIds.push(comp.id);
-      const line = monitor.error
-        ? `🔴 ${monitor.name} — ${monitor.error}`
-        : `🔴 ${monitor.name}`;
-      affectedLines.push(line);
-    }
-  }
+  const componentIds = downMonitors
+    .map((m) => byName.get(m.name)?.id)
+    .filter((id): id is string => id != null);
 
-  const body = `Affected services:\n\n${affectedLines.join("\n\n")}`;
-  const name =
-    affectedLines.length === 1
-      ? `${downMonitors.find((m) => byName.has(m.name))!.name} Down`
-      : "Multiple Systems Disrupted";
   const componentsKey = componentIds.slice().sort().join(",");
 
-  return { name, body, componentIds, componentsKey };
+  return { name: report.title, body: report.body, componentIds, componentsKey };
 };
 
 /** Build a Markdown postmortem body from the incident details. */
