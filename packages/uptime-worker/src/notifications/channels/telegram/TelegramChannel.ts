@@ -1,5 +1,5 @@
 import { FormattedString } from "@grammyjs/parse-mode";
-import { UPTIME_KV_KEYS } from "../../../kvKeys";
+import { UPTIME_KV_KEYS } from "../../../constants";
 import { TelegramService } from "./TelegramService";
 import type { NotificationChannel, NotificationContext } from "../../types";
 import { buildDowntimeMessage, type DowntimeMessage } from "../../messages";
@@ -67,7 +67,7 @@ export class TelegramChannel implements NotificationChannel {
     const statusPageUrl = uptimeWorkerConfig.statuspageUrl;
 
     const lastNotificationOfDowntime = await env.uptime.get(
-      UPTIME_KV_KEYS.lastNotificationOfDowntime,
+      UPTIME_KV_KEYS.telegramDowntimeMessageId,
     );
     const failedChecks = state.filter((c) => c.status === "down");
     const isAnyCheckDown = failedChecks.length > 0;
@@ -82,7 +82,7 @@ export class TelegramChannel implements NotificationChannel {
         return;
       }
 
-      await env.uptime.put(UPTIME_KV_KEYS.lastNotificationOfDowntime, "");
+      await env.uptime.put(UPTIME_KV_KEYS.telegramDowntimeMessageId, "");
 
       console.log("[TelegramChannel] sending recovery message");
 
@@ -120,7 +120,7 @@ export class TelegramChannel implements NotificationChannel {
     });
 
     await env.uptime.put(
-      UPTIME_KV_KEYS.lastNotificationOfDowntime,
+      UPTIME_KV_KEYS.telegramDowntimeMessageId,
       message.message_id.toString(),
     );
     console.log("[TelegramChannel] Sent Telegram notification about downtime");

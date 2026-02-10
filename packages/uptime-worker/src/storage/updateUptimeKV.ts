@@ -1,4 +1,4 @@
-import { UPTIME_KV_KEYS } from "../kvKeys";
+import { UPTIME_KV_KEYS } from "../constants";
 import { CheckResultList } from "../types";
 
 export const updateUptimeKV = async (

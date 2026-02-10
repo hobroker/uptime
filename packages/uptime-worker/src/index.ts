@@ -28,7 +28,7 @@ export default {
     // Get the current state of all checks
     const state = await runChecks(uptimeWorkerConfig, { env });
 
-    console.log("state", state);
+    console.log("[scheduled] state", state);
 
     // Update the KV store with the new state
     await updateUptimeKV(state, { env });
@@ -37,7 +37,7 @@ export default {
     await notificationService.notifyAll({ state, env });
 
     // Keep the cron string for debugging; controller.cron is provided by Workers runtime
-    console.log(`trigger fired at ${controller.cron}`);
+    console.log(`[scheduled] trigger fired at ${controller.cron}`);
     ctx.waitUntil(Promise.resolve());
   },
 } satisfies ExportedHandler<Env>;
