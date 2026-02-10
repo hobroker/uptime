@@ -50,7 +50,7 @@ const createEnv = (kvInit: Record<string, string> = {}) => {
     STATUSPAGE_IO_API_KEY: "test-key",
     STATUSPAGE_IO_PAGE_ID: "test-page",
     uptime: kv,
-  };
+  } as unknown as Env;
 };
 
 // Pre-existing components returned by listComponents

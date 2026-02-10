@@ -3,6 +3,11 @@ import { UptimeWorkerConfig } from "./packages/uptime-worker/src/types";
 export const uptimeWorkerConfig: UptimeWorkerConfig = {
   monitors: [
     {
+      name: "Rancher",
+      target: "https://rancher.hobroker.me",
+      protectedByZeroTrust: true,
+    },
+    {
       name: "Sonarr",
       target: "https://sonarr.hobroker.me",
       protectedByZeroTrust: true,
