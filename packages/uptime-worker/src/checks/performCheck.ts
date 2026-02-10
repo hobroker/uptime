@@ -21,6 +21,10 @@ export const performCheck = async (
         headers: check.headers?.({ env }),
         signal: AbortSignal.timeout(check.timeout),
       });
+
+      // Cancel response body since we only need status/headers
+      response.body?.cancel();
+
       const expectedCodes = check.expectedCodes;
       const isProtected =
         response.headers.get("cf-access-domain") ||
