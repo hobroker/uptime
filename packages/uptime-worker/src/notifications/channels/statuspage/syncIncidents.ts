@@ -4,7 +4,12 @@ import {
   type StatuspageIncident,
 } from "./services";
 import type { CheckResultList } from "../../../types";
-import { buildDowntimeMessage } from "../../messages";
+import {
+  statuspageDowntimeBodyTemplate,
+  statuspageDowntimeTitleTemplate,
+  statuspagePostmortemTemplate,
+  statuspageRecoveryTemplate,
+} from "./templates";
 
 interface IncidentData {
   name: string;
@@ -18,25 +23,19 @@ export const buildIncidentData = (
   failedChecks: CheckResultList,
   byName: Map<string, StatuspageComponent>,
 ): IncidentData => {
-  const report = buildDowntimeMessage(failedChecks);
-
   const componentIds = failedChecks
     .map((c) => byName.get(c.name)?.id)
     .filter((id): id is string => id != null);
 
   const componentsKey = componentIds.slice().sort().join(",");
 
-  return { name: report.title, body: report.body, componentIds, componentsKey };
+  return {
+    name: statuspageDowntimeTitleTemplate({ failedChecks }),
+    body: statuspageDowntimeBodyTemplate({ failedChecks }),
+    componentIds,
+    componentsKey,
+  };
 };
-
-/** Build a Markdown postmortem body from the incident details. */
-export const buildPostmortemBody = (incidentDetails: string): string =>
-  [
-    "##### Issue\n\n",
-    incidentDetails,
-    "\n\n##### Resolution\n\n",
-    "All services are back up and running and the incident has been resolved.",
-  ].join("");
 
 // ---------------------------------------------------------------------------
 // API workflows
@@ -95,10 +94,10 @@ const resolveIncident = async ({
   console.log("[Statuspage] resolving incident, all checks are up");
   await incidentService.updateIncident(incidentId, {
     status: "resolved",
-    body: "All services have recovered.",
+    body: statuspageRecoveryTemplate(),
   });
 
-  const postmortemBody = buildPostmortemBody(incidentDetails);
+  const postmortemBody = statuspagePostmortemTemplate({ incidentDetails });
 
   console.log("[Statuspage] creating postmortem");
   await incidentService.createPostmortem(incidentId, {

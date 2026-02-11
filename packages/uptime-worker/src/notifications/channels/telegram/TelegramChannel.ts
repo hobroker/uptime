@@ -18,7 +18,7 @@ export class TelegramChannel extends NotificationChannel {
 
     const statusPageUrl = uptimeWorkerConfig.statuspageUrl;
     const lastNotificationId = await this.getLastNotificationId();
-    const isAnyCheckDown = this.downtimeChecks.length > 0;
+    const isAnyCheckDown = this.failedChecks.length > 0;
 
     // Handle case where we already notified about downtime
     if (lastNotificationId) {
@@ -104,10 +104,9 @@ export class TelegramChannel extends NotificationChannel {
     console.log(`[TelegramChannel] sending downtime message`);
 
     const formatted = telegramDowntimeTemplate({
-      downtimeChecks: this.downtimeChecks,
+      failedChecks: this.failedChecks,
       statusPageUrl,
     });
-    console.log(`[TelegramChannel] formatted downtime message: ${formatted}`);
     const message = await telegramService.sendMessage({
       chatId: this.env.TELEGRAM_CHAT_ID,
       message: formatted,
@@ -117,7 +116,7 @@ export class TelegramChannel extends NotificationChannel {
     console.log("[TelegramChannel] Sent Telegram notification about downtime");
   }
 
-  private get downtimeChecks() {
+  private get failedChecks() {
     return this.state.filter((c) => c.status === "down");
   }
 }

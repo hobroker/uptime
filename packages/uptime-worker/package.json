@@ -24,7 +24,6 @@
     "wrangler": "^4.63.0"
   },
   "dependencies": {
-    "@grammyjs/parse-mode": "^2.2.1",
     "grammy": "^1.39.3",
     "liquidjs": "^10.24.0"
   }

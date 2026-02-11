@@ -1,9 +1,5 @@
 import { vi } from "vitest";
-import {
-  buildIncidentData,
-  buildPostmortemBody,
-  syncIncidents,
-} from "./syncIncidents";
+import { buildIncidentData, syncIncidents } from "./syncIncidents";
 import { CheckResultList } from "../../../types";
 import type { StatuspageComponent } from "./services";
 
@@ -61,9 +57,9 @@ describe("buildIncidentData", () => {
 
     const data = buildIncidentData(down, byName);
 
-    expect(data.name).toBe("api Down");
+    expect(data.name).toBe("⚠️ 1 check is down");
     expect(data.body).toBe(
-      "Affected services:\n\n🔴 api — HTTP 500 Internal Server Error",
+      "The following services are currently down:\n\n🔴 api\n<code>HTTP 500 Internal Server Error</code>",
     );
     expect(data.componentIds).toEqual(["comp-1"]);
     expect(data.componentsKey).toBe("comp-1");
@@ -85,8 +81,10 @@ describe("buildIncidentData", () => {
 
     const data = buildIncidentData(down, byName);
 
-    expect(data.name).toBe("Multiple Systems Disrupted");
-    expect(data.body).toBe("Affected services:\n\n🔴 api\n\n🔴 web");
+    expect(data.name).toBe("⚠️ 2 checks are down");
+    expect(data.body).toBe(
+      "The following services are currently down:\n\n🔴 api\n\n\n🔴 web",
+    );
     expect(data.componentIds).toEqual(["comp-1", "comp-2"]);
     expect(data.componentsKey).toBe("comp-1,comp-2");
   });
@@ -102,7 +100,9 @@ describe("buildIncidentData", () => {
 
     const data = buildIncidentData(down, byName);
 
-    expect(data.body).toBe("Affected services:\n\n🔴 api");
+    expect(data.body).toBe(
+      "The following services are currently down:\n\n🔴 api",
+    );
   });
 
   it("should sort component IDs in the componentsKey", () => {
@@ -122,16 +122,6 @@ describe("buildIncidentData", () => {
     const data = buildIncidentData(down, byName);
 
     expect(data.componentsKey).toBe("comp-1,comp-2");
-  });
-});
-
-describe("buildPostmortemBody", () => {
-  it("should wrap incident details in Issue and Resolution sections", () => {
-    const body = buildPostmortemBody("🔴 api — HTTP 500");
-
-    expect(body).toBe(
-      "##### Issue\n\n🔴 api — HTTP 500\n\n##### Resolution\n\nAll services are back up and running and the incident has been resolved.",
-    );
   });
 });
 
@@ -159,9 +149,9 @@ describe("syncIncidents", () => {
     await syncIncidents({ state, byName, incidentService: service });
 
     expect(mockCreateIncident).toHaveBeenCalledWith({
-      name: "api Down",
+      name: "⚠️ 1 check is down",
       status: "investigating",
-      body: "Affected services:\n\n🔴 api — HTTP 500 Internal Server Error",
+      body: "The following services are currently down:\n\n🔴 api\n<code>HTTP 500 Internal Server Error</code>",
       componentIds: ["comp-1"],
     });
   });
@@ -183,7 +173,7 @@ describe("syncIncidents", () => {
     mockListUnresolvedIncidents.mockResolvedValue([
       {
         id: "inc-existing",
-        name: "api Down",
+        name: "⚠️ 1 check is down",
         status: "investigating",
         incident_updates: [],
         components: [{ id: "comp-1", name: "api", status: "operational" }],
@@ -194,8 +184,8 @@ describe("syncIncidents", () => {
 
     expect(mockCreateIncident).not.toHaveBeenCalled();
     expect(mockUpdateIncident).toHaveBeenCalledWith("inc-existing", {
-      name: "Multiple Systems Disrupted",
-      body: "Affected services:\n\n🔴 api\n\n🔴 web",
+      name: "⚠️ 2 checks are down",
+      body: "The following services are currently down:\n\n🔴 api\n\n\n🔴 web",
       componentIds: ["comp-1", "comp-2"],
     });
   });
@@ -217,7 +207,7 @@ describe("syncIncidents", () => {
     mockListUnresolvedIncidents.mockResolvedValue([
       {
         id: "inc-existing",
-        name: "api Down",
+        name: "⚠️ 1 check is down",
         status: "investigating",
         incident_updates: [],
         components: [{ id: "comp-1", name: "api", status: "operational" }],
@@ -250,7 +240,7 @@ describe("syncIncidents", () => {
         {
           id: "upd-2",
           status: "investigating",
-          body: "Affected services:\n🔴 api — HTTP 500 Internal Server Error",
+          body: "The following services are currently down:\n🔴 api — HTTP 500 Internal Server Error",
         },
       ],
     });
@@ -258,7 +248,7 @@ describe("syncIncidents", () => {
     mockListUnresolvedIncidents.mockResolvedValue([
       {
         id: "inc-existing",
-        name: "api Down",
+        name: "⚠️ 1 check is down",
         status: "investigating",
         incident_updates: [],
         components: [{ id: "comp-1", name: "api", status: "operational" }],
@@ -273,7 +263,7 @@ describe("syncIncidents", () => {
       body: "All services have recovered.",
     });
     expect(mockCreatePostmortem).toHaveBeenCalledWith("inc-existing", {
-      body: "##### Issue\n\nAffected services:\n🔴 api — HTTP 500 Internal Server Error\n\n##### Resolution\n\nAll services are back up and running and the incident has been resolved.",
+      body: "## Issue\nThe following services are currently down:\n🔴 api — HTTP 500 Internal Server Error\n## Resolution\nAll services are back up and running and the incident has been resolved.",
     });
     expect(mockPublishPostmortem).toHaveBeenCalledWith("inc-existing");
   });
