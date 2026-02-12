@@ -1,6 +1,9 @@
 import { Liquid } from "liquidjs";
 
-const engine = new Liquid();
+const engine = new Liquid({
+  strictFilters: true,
+  cache: true,
+});
 
 export const parseTemplate = <T extends object | undefined = undefined>(
   templateSource: string,
