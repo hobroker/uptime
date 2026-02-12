@@ -26,13 +26,15 @@ export const performCheck = async (
       response.body?.cancel();
 
       const expectedCodes = check.expectedCodes;
-      const isProtected =
-        response.headers.get("cf-access-domain") ||
-        [401, 403].includes(response.status); // TODO handle `expectedCodes` here, sometimes it may be necessary to expect 401 or 403
+      const isExpected = expectedCodes.includes(response.status);
 
-      if (expectedCodes.includes(response.status) && !isProtected) {
+      if (isExpected) {
         return state;
       }
+
+      const isProtected =
+        response.headers.get("cf-access-domain") ||
+        [401, 403].includes(response.status);
 
       const errorMessage = isProtected
         ? `Protected by Zero Trust (HTTP ${response.status})`
