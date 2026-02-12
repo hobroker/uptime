@@ -30,7 +30,11 @@ export default {
 
     const notificationService = new NotificationService([
       new StatuspageChannel({ state, env }),
-      new TelegramChannel({ state, env }),
+      new TelegramChannel({
+        state,
+        env,
+        statuspageUrl: uptimeWorkerConfig.statuspageUrl,
+      }),
     ]);
     // Notify all channels (Statuspage, Telegram, etc.)
     await notificationService.notifyAll();

@@ -2,21 +2,33 @@ import { UPTIME_KV_KEYS } from "../../../constants";
 import { TelegramService } from "./TelegramService";
 import { NotificationChannel } from "../../NotificationChannel";
 import { ChannelName } from "../constants";
-import { uptimeWorkerConfig } from "../../../../uptime.config";
 import {
   telegramDowntimeTemplate,
   telegramRecoveryTemplate,
 } from "./templates";
+import { NotificationContext } from "../../types";
+
+interface TelegramNotificationContext extends NotificationContext {
+  statuspageUrl?: string;
+}
 
 export class TelegramChannel extends NotificationChannel {
   name = ChannelName.Telegram;
+  private statuspageUrl?: string;
+
+  constructor({ state, env, statuspageUrl }: TelegramNotificationContext) {
+    super({ state, env });
+    this.state = state;
+    this.env = env;
+    this.statuspageUrl = statuspageUrl;
+  }
 
   async notify(): Promise<void> {
     const telegramService = new TelegramService({
       token: this.env.TELEGRAM_BOT_TOKEN,
     });
 
-    const statusPageUrl = uptimeWorkerConfig.statuspageUrl;
+    const statusPageUrl = this.statuspageUrl;
     const lastNotificationId = await this.getLastNotificationId();
     const isAnyCheckDown = this.failedChecks.length > 0;
 
