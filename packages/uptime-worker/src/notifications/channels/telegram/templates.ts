@@ -3,10 +3,10 @@ import { CheckResultList } from "../../../types";
 
 export const telegramDowntimeTemplate = parseTemplate<{
   failedChecks: CheckResultList;
-  statusPageUrl?: string;
+  statuspageUrl?: string;
 }>(`{% assign checksCount = failedChecks | size %}
 <b>⚠️ {{ checksCount }} {% if checksCount == 1 %}check is{% else %}checks are{% endif %} down.</b>
-{% if statusPageUrl %}Status page: {{ statusPageUrl }}{% endif %}
+{% if statuspageUrl %}Status page: {{ statuspageUrl }}{% endif %}
 {% for check in failedChecks %}
 🔴 <a href="{{ check.target }}">{{ check.name }}</a>
 {% if check.error %}<blockquote expandable>{{ check.error }}</blockquote>{% endif %}
@@ -14,7 +14,7 @@ export const telegramDowntimeTemplate = parseTemplate<{
 `);
 
 export const telegramRecoveryTemplate = parseTemplate<{
-  statusPageUrl?: string;
+  statuspageUrl?: string;
 }>(`✅ All checks are up and running!
-{% if statusPageUrl %}Status page: {{ statusPageUrl }}{% endif %}
+{% if statuspageUrl %}Status page: {{ statuspageUrl }}{% endif %}
 `);

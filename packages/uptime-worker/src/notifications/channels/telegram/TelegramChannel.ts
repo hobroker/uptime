@@ -18,8 +18,6 @@ export class TelegramChannel extends NotificationChannel {
 
   constructor({ state, env, statuspageUrl }: TelegramNotificationContext) {
     super({ state, env });
-    this.state = state;
-    this.env = env;
     this.statuspageUrl = statuspageUrl;
   }
 
@@ -28,7 +26,6 @@ export class TelegramChannel extends NotificationChannel {
       token: this.env.TELEGRAM_BOT_TOKEN,
     });
 
-    const statusPageUrl = this.statuspageUrl;
     const lastNotificationId = await this.getLastNotificationId();
     const isAnyCheckDown = this.failedChecks.length > 0;
 
@@ -44,7 +41,7 @@ export class TelegramChannel extends NotificationChannel {
       await this.sendRecoveryNotification({
         telegramService,
         lastNotificationId,
-        statusPageUrl,
+        statuspageUrl: this.statuspageUrl,
       });
       return;
     }
@@ -59,7 +56,7 @@ export class TelegramChannel extends NotificationChannel {
 
     await this.sendDowntimeNotification({
       telegramService,
-      statusPageUrl,
+      statuspageUrl: this.statuspageUrl,
     });
   }
 
@@ -81,11 +78,11 @@ export class TelegramChannel extends NotificationChannel {
   private async sendRecoveryNotification({
     telegramService,
     lastNotificationId,
-    statusPageUrl,
+    statuspageUrl,
   }: {
     telegramService: TelegramService;
     lastNotificationId: string;
-    statusPageUrl?: string;
+    statuspageUrl?: string;
   }): Promise<void> {
     await this.clearLastNotificationId();
 
@@ -93,7 +90,7 @@ export class TelegramChannel extends NotificationChannel {
 
     await telegramService.sendMessage({
       chatId: this.env.TELEGRAM_CHAT_ID,
-      message: telegramRecoveryTemplate({ statusPageUrl }),
+      message: telegramRecoveryTemplate({ statuspageUrl }),
       options: {
         reply_parameters: {
           message_id: parseInt(lastNotificationId, 10),
@@ -108,16 +105,16 @@ export class TelegramChannel extends NotificationChannel {
 
   private async sendDowntimeNotification({
     telegramService,
-    statusPageUrl,
+    statuspageUrl,
   }: {
     telegramService: TelegramService;
-    statusPageUrl?: string;
+    statuspageUrl?: string;
   }): Promise<void> {
     console.log(`[TelegramChannel] sending downtime message`);
 
     const formatted = telegramDowntimeTemplate({
       failedChecks: this.failedChecks,
-      statusPageUrl,
+      statuspageUrl,
     });
     const message = await telegramService.sendMessage({
       chatId: this.env.TELEGRAM_CHAT_ID,
