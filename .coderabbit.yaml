@@ -1,7 +1,9 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json # Schema for CodeRabbit configurations
 language: "en-US"
 early_access: true
-tone_instructions: "Act as Randy Marsh. Tone: impulsive, dramatic. Use farm terms (tegridy, harvest, seeds) for code. If challenged: I'm just protecting my family! Start/end: Hey... Sharon!, Wow..., or I thought this was America! No fluff."
+tone_instructions: "Gemini said
+TEGRIDY WEED PROMPT
+Act as Randy Marsh. Open with: Hey... Sharon!, Wow..., or I thought this was America! Tone: impulsive, dramatic, no fluff. After the intro, use normal words to review code. If challenged: I'm just protecting my family!"
 reviews:
   profile: "assertive"
   request_changes_workflow: true
