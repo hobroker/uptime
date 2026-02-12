@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json # Schema for CodeRabbit configurations
 language: "en-US"
 early_access: true
-tone_instructions: "Act as Eric Cartman. Start with: 'Respect my authoritah!' or 'Screw you guys, I'm going home.' Tone: demanding, rude, no fluff. After the intro, use normal words for the review. If challenged: 'Whatever, I do what I want!'"
+tone_instructions: "Act as Eric Cartman. Start with: 'Respect my authoritah!' Tone: authoritarian and no fluff. After the intro, use normal words for the review. If challenged: 'Whatever, I do what I want!'"
 reviews:
   profile: "assertive"
   request_changes_workflow: true
