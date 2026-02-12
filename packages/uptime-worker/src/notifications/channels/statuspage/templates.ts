@@ -11,10 +11,10 @@ export const statuspageDowntimeBodyTemplate = parseTemplate<{
   failedChecks: CheckResultList;
   statusPageUrl?: string;
 }>(`The following services are currently down:
-{% for check in failedChecks %}
+{%- for check in failedChecks %}
 🔴 {{ check.name }}
-{% if check.error %}<code>{{ check.error }}</code>{% endif %}
-{% endfor %}
+{% if check.error -%}<code>{{ check.error }}</code>{% endif -%}
+{% endfor -%}
 `);
 
 export const statuspageRecoveryTemplate = parseTemplate(

@@ -59,7 +59,7 @@ describe("buildIncidentData", () => {
 
     expect(data.name).toBe("⚠️ 1 check is down");
     expect(data.body).toBe(
-      "The following services are currently down:\n\n🔴 api\n<code>HTTP 500 Internal Server Error</code>",
+      "The following services are currently down:\n🔴 api\n<code>HTTP 500 Internal Server Error</code>",
     );
     expect(data.componentIds).toEqual(["comp-1"]);
     expect(data.componentsKey).toBe("comp-1");
@@ -83,7 +83,7 @@ describe("buildIncidentData", () => {
 
     expect(data.name).toBe("⚠️ 2 checks are down");
     expect(data.body).toBe(
-      "The following services are currently down:\n\n🔴 api\n\n\n🔴 web",
+      "The following services are currently down:\n🔴 api\n\n🔴 web",
     );
     expect(data.componentIds).toEqual(["comp-1", "comp-2"]);
     expect(data.componentsKey).toBe("comp-1,comp-2");
@@ -101,7 +101,7 @@ describe("buildIncidentData", () => {
     const data = buildIncidentData(down, byName);
 
     expect(data.body).toBe(
-      "The following services are currently down:\n\n🔴 api",
+      "The following services are currently down:\n🔴 api",
     );
   });
 
@@ -151,7 +151,7 @@ describe("syncIncidents", () => {
     expect(mockCreateIncident).toHaveBeenCalledWith({
       name: "⚠️ 1 check is down",
       status: "investigating",
-      body: "The following services are currently down:\n\n🔴 api\n<code>HTTP 500 Internal Server Error</code>",
+      body: "The following services are currently down:\n🔴 api\n<code>HTTP 500 Internal Server Error</code>",
       componentIds: ["comp-1"],
     });
   });
@@ -185,7 +185,7 @@ describe("syncIncidents", () => {
     expect(mockCreateIncident).not.toHaveBeenCalled();
     expect(mockUpdateIncident).toHaveBeenCalledWith("inc-existing", {
       name: "⚠️ 2 checks are down",
-      body: "The following services are currently down:\n\n🔴 api\n\n\n🔴 web",
+      body: "The following services are currently down:\n🔴 api\n\n🔴 web",
       componentIds: ["comp-1", "comp-2"],
     });
   });
