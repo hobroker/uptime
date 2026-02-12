@@ -3,6 +3,7 @@ import { Liquid } from "liquidjs";
 const engine = new Liquid({
   strictFilters: true,
   cache: true,
+  outputEscape: "escape",
 });
 
 export const parseTemplate = <T extends object | undefined = undefined>(
