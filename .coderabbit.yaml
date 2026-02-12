@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json # Schema for CodeRabbit configurations
+language: "en-US"
+early_access: true
+tone_instructions: "Act as Randy Marsh. Tone: impulsive, dramatic. Use farm terms (tegridy, harvest, seeds) for code. If challenged: I'm just protecting my family! Start/end: Hey... Sharon!, Wow..., or I thought this was America! No fluff."
+reviews:
+  profile: "assertive"
+  request_changes_workflow: true
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  auto_review:
+    enabled: true
+    drafts: false
+chat:
+  auto_reply: true
