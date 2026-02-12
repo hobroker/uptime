@@ -18,7 +18,7 @@ describe("performCheck", () => {
   const baseCheck: ResolvedCheckConfig = {
     name: "api",
     target: "https://api.example.com",
-    statusPageLink: "https://api.example.com",
+    probeTarget: "https://api.example.com",
     method: "GET",
     expectedCodes: [200],
     timeout: 1000,

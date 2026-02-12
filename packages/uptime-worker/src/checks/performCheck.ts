@@ -15,7 +15,7 @@ export const performCheck = async (
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      const response = await fetch(check.statusPageLink, {
+      const response = await fetch(check.probeTarget, {
         method: check.method,
         body: check.body?.({ env }),
         headers: check.headers?.({ env }),
