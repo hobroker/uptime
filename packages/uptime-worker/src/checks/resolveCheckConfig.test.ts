@@ -11,7 +11,7 @@ describe("resolveCheckConfig", () => {
     const resolved = resolveCheckConfig(input);
 
     expect(resolved.method).toBe("GET");
-    expect(resolved.statusPageLink).toBe("https://api.example.com");
+    expect(resolved.probeTarget).toBe("https://api.example.com");
     expect(resolved.expectedCodes).toEqual([200]);
     expect(resolved.timeout).toBe(10000);
     expect(resolved.retryCount).toBe(0);
@@ -22,7 +22,7 @@ describe("resolveCheckConfig", () => {
       name: "api",
       target: "https://api.example.com",
       method: "POST",
-      statusPageLink: "https://status.example.com",
+      probeTarget: "https://status.example.com",
       expectedCodes: [200, 202],
       timeout: 2500,
       retryCount: 3,
@@ -31,7 +31,7 @@ describe("resolveCheckConfig", () => {
     const resolved = resolveCheckConfig(input);
 
     expect(resolved.method).toBe("POST");
-    expect(resolved.statusPageLink).toBe("https://status.example.com");
+    expect(resolved.probeTarget).toBe("https://status.example.com");
     expect(resolved.expectedCodes).toEqual([200, 202]);
     expect(resolved.timeout).toBe(2500);
     expect(resolved.retryCount).toBe(3);

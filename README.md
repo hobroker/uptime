@@ -112,7 +112,7 @@
        {
          name: "Example Site",
          target: "https://example.com",
-         statusPageLink: "https://status.example.com", // Optional: URL to probe (defaults to target)
+         probeTarget: "https://status.example.com", // Optional: URL to probe (defaults to target)
          expectedCodes: [200], // Optional: Expected HTTP status codes (defaults to [200])
          timeout: 5000, // Optional: Request timeout in ms (defaults to 5000)
          headers: undefined, // Optional: Additional headers to send with the request
