@@ -1,72 +1,33 @@
-import { FormattedString } from "@grammyjs/parse-mode";
 import { UPTIME_KV_KEYS } from "../../../constants";
 import { TelegramService } from "./TelegramService";
 import { NotificationChannel } from "../../NotificationChannel";
-import { buildDowntimeMessage, type DowntimeMessage } from "../../messages";
 import { ChannelName } from "../constants";
-import { uptimeWorkerConfig } from "../../../../uptime.config";
+import {
+  telegramDowntimeTemplate,
+  telegramRecoveryTemplate,
+} from "./templates";
+import { NotificationContext } from "../../types";
 
-const isHttpUrl = (value: string) => {
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
-};
-
-const formatDowntimeMessage = (
-  report: DowntimeMessage,
-  statusPageUrl?: string,
-) => {
-  let msg = new FormattedString("");
-
-  if (statusPageUrl) {
-    msg = msg.link(`⚠️ ${report.title} ⚠️`, statusPageUrl);
-  } else {
-    msg = msg.plain(`⚠️ ${report.title} ⚠️`);
-  }
-
-  msg = msg.plain("\n\n");
-
-  report.failedChecks.forEach(({ name, target, error }, i) => {
-    if (i > 0) msg = msg.plain("\n");
-
-    msg = msg.plain("🔴 ");
-
-    if (isHttpUrl(target)) {
-      msg = msg.link(name, target);
-    } else {
-      msg = msg.b(name).plain(" (").plain(target).plain(")");
-    }
-
-    msg = msg.plain(error ? `: ${error}` : "");
-  });
-
-  return msg;
-};
-
-const formatRecoveryMessage = (statusPageUrl?: string) => {
-  const message = new FormattedString("✅ All checks are up and running!\n");
-
-  if (statusPageUrl) {
-    return message.link("Status page", statusPageUrl);
-  }
-
-  return message;
-};
+interface TelegramNotificationContext extends NotificationContext {
+  statuspageUrl?: string;
+}
 
 export class TelegramChannel extends NotificationChannel {
   name = ChannelName.Telegram;
+  private statuspageUrl?: string;
+
+  constructor({ state, env, statuspageUrl }: TelegramNotificationContext) {
+    super({ state, env });
+    this.statuspageUrl = statuspageUrl;
+  }
 
   async notify(): Promise<void> {
     const telegramService = new TelegramService({
       token: this.env.TELEGRAM_BOT_TOKEN,
     });
 
-    const statusPageUrl = uptimeWorkerConfig.statuspageUrl;
     const lastNotificationId = await this.getLastNotificationId();
-    const isAnyCheckDown = this.downtimeChecks.length > 0;
+    const isAnyCheckDown = this.failedChecks.length > 0;
 
     // Handle case where we already notified about downtime
     if (lastNotificationId) {
@@ -80,7 +41,7 @@ export class TelegramChannel extends NotificationChannel {
       await this.sendRecoveryNotification({
         telegramService,
         lastNotificationId,
-        statusPageUrl,
+        statuspageUrl: this.statuspageUrl,
       });
       return;
     }
@@ -95,7 +56,7 @@ export class TelegramChannel extends NotificationChannel {
 
     await this.sendDowntimeNotification({
       telegramService,
-      statusPageUrl,
+      statuspageUrl: this.statuspageUrl,
     });
   }
 
@@ -117,11 +78,11 @@ export class TelegramChannel extends NotificationChannel {
   private async sendRecoveryNotification({
     telegramService,
     lastNotificationId,
-    statusPageUrl,
+    statuspageUrl,
   }: {
     telegramService: TelegramService;
     lastNotificationId: string;
-    statusPageUrl?: string;
+    statuspageUrl?: string;
   }): Promise<void> {
     await this.clearLastNotificationId();
 
@@ -129,7 +90,7 @@ export class TelegramChannel extends NotificationChannel {
 
     await telegramService.sendMessage({
       chatId: this.env.TELEGRAM_CHAT_ID,
-      message: formatRecoveryMessage(statusPageUrl),
+      message: telegramRecoveryTemplate({ statuspageUrl }),
       options: {
         reply_parameters: {
           message_id: parseInt(lastNotificationId, 10),
@@ -144,15 +105,17 @@ export class TelegramChannel extends NotificationChannel {
 
   private async sendDowntimeNotification({
     telegramService,
-    statusPageUrl,
+    statuspageUrl,
   }: {
     telegramService: TelegramService;
-    statusPageUrl?: string;
+    statuspageUrl?: string;
   }): Promise<void> {
-    const downtime = buildDowntimeMessage(this.downtimeChecks);
-    console.log(`[TelegramChannel] sending ${downtime.type} message`);
+    console.log(`[TelegramChannel] sending downtime message`);
 
-    const formatted = formatDowntimeMessage(downtime, statusPageUrl);
+    const formatted = telegramDowntimeTemplate({
+      failedChecks: this.failedChecks,
+      statuspageUrl,
+    });
     const message = await telegramService.sendMessage({
       chatId: this.env.TELEGRAM_CHAT_ID,
       message: formatted,
@@ -162,7 +125,7 @@ export class TelegramChannel extends NotificationChannel {
     console.log("[TelegramChannel] Sent Telegram notification about downtime");
   }
 
-  private get downtimeChecks() {
+  private get failedChecks() {
     return this.state.filter((c) => c.status === "down");
   }
 }
