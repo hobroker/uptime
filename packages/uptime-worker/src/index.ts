@@ -2,7 +2,6 @@ import { runChecks } from "./checks/runChecks";
 import { NotificationService } from "./notifications/NotificationService";
 import { StatuspageChannel } from "./notifications/channels/statuspage/StatuspageChannel";
 import { TelegramChannel } from "./notifications/channels/telegram/TelegramChannel";
-import { updateUptimeKV } from "./storage/updateUptimeKV";
 import { uptimeWorkerConfig } from "../uptime.config";
 
 export default {
@@ -24,9 +23,6 @@ export default {
     const state = await runChecks(uptimeWorkerConfig, { env });
 
     console.log("[scheduled] state", state);
-
-    // Update the KV store with the new state
-    await updateUptimeKV(state, { env });
 
     const notificationService = new NotificationService([
       new StatuspageChannel({ state, env }),
