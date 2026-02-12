@@ -3,7 +3,7 @@ import { performCheck } from "./performCheck";
 import { UptimeWorkerConfig } from "../types";
 import { resolveCheckConfig } from "./resolveCheckConfig";
 
-const limit = pLimit(1);
+const limit = pLimit(2);
 
 export const runChecks = async (
   config: UptimeWorkerConfig,
