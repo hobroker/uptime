@@ -9,7 +9,6 @@ export const statuspageDowntimeTitleTemplate = parseTemplate<{
 
 export const statuspageDowntimeBodyTemplate = parseTemplate<{
   failedChecks: CheckResultList;
-  statusPageUrl?: string;
 }>(`The following services are currently down:
 {%- for check in failedChecks %}
 🔴 {{ check.name }}
