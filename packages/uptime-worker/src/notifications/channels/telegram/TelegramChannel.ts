@@ -1,4 +1,3 @@
-import { UPTIME_KV_KEYS } from "../../../constants";
 import { TelegramService } from "./TelegramService";
 import { NotificationChannel } from "../../NotificationChannel";
 import { ChannelName } from "../../constants";
@@ -8,6 +7,7 @@ import {
 } from "./templates";
 import { NotificationContext } from "../../types";
 import { NotificationStateStore } from "../../NotificationStateStore";
+import { TelegramNotificationState } from "./types";
 
 interface TelegramNotificationContext extends NotificationContext {
   statuspageUrl?: string;
@@ -21,10 +21,7 @@ export class TelegramChannel extends NotificationChannel {
   constructor({ state, env, statuspageUrl }: TelegramNotificationContext) {
     super({ state, env });
     this.statuspageUrl = statuspageUrl;
-    this.notificationStateStore = new NotificationStateStore(
-      env.uptime,
-      this.name,
-    );
+    this.notificationStateStore = new NotificationStateStore(env.uptime);
   }
 
   async notify(): Promise<void> {
@@ -67,17 +64,24 @@ export class TelegramChannel extends NotificationChannel {
   }
 
   private async getLastNotificationId(): Promise<string | null> {
-    return await this.env.uptime.get(UPTIME_KV_KEYS.telegramDowntimeMessageId);
+    const state =
+      await this.notificationStateStore.getChannelState<TelegramNotificationState>(
+        ChannelName.Telegram,
+      );
+    return state?.lastMessageId || null;
   }
 
   private async clearLastNotificationId(): Promise<void> {
-    await this.env.uptime.put(UPTIME_KV_KEYS.telegramDowntimeMessageId, "");
+    await this.notificationStateStore.updateChannelState<TelegramNotificationState>(
+      ChannelName.Telegram,
+      (prev) => ({ ...prev, lastMessageId: undefined }),
+    );
   }
 
-  private async saveNotificationId(messageId: number): Promise<void> {
-    await this.env.uptime.put(
-      UPTIME_KV_KEYS.telegramDowntimeMessageId,
-      messageId.toString(),
+  private saveNotificationId(messageId: number): Promise<void> {
+    return this.notificationStateStore.updateChannelState<TelegramNotificationState>(
+      ChannelName.Telegram,
+      (prev) => ({ ...prev, lastMessageId: messageId.toString() }),
     );
   }
 

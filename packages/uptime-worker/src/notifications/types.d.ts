@@ -8,12 +8,5 @@ export interface NotificationContext {
 
 export interface NotificationState {
   lastFailedChecks: string[];
-  channels: {
-    [ChannelName.Telegram]?: {
-      lastMessageId?: string;
-    };
-    [ChannelName.Statuspage]?: {
-      incidentId?: string;
-    };
-  };
+  channels: Partial<Record<ChannelName, object | null | undefined>>;
 }
