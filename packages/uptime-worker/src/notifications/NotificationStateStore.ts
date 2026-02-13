@@ -47,7 +47,11 @@ export class NotificationStateStore {
       const doc = await this.kv.get(UPTIME_KV_KEYS.notificationState);
       if (!doc) return defaultState;
       return JSON.parse(doc) as NotificationState;
-    } catch {
+    } catch (error) {
+      console.error(
+        "[NotificationStateStore] Error getting/parsing notification state:",
+        error,
+      );
       return defaultState;
     }
   }
