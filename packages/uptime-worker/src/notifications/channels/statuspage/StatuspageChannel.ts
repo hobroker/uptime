@@ -6,7 +6,7 @@ import { syncComponents } from "./syncComponents";
 import { syncIncidents } from "./syncIncidents";
 import { NotificationChannel } from "../../NotificationChannel";
 
-import { ChannelName } from "../constants";
+import { ChannelName } from "../../constants";
 
 export class StatuspageChannel extends NotificationChannel {
   name = ChannelName.Statuspage;
