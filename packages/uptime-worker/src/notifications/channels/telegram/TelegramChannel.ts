@@ -78,8 +78,8 @@ export class TelegramChannel extends NotificationChannel {
     );
   }
 
-  private saveNotificationId(messageId: number): Promise<void> {
-    return this.notificationStateStore.updateChannelState<TelegramNotificationState>(
+  private async saveNotificationId(messageId: number): Promise<void> {
+    await this.notificationStateStore.updateChannelState<TelegramNotificationState>(
       ChannelName.Telegram,
       (prev) => ({ ...prev, lastMessageId: messageId.toString() }),
     );
