@@ -1,4 +1,5 @@
 import { ResolvedCheckConfig, CheckResult } from "../types";
+import { getCheckFailureReason } from "./getCheckFailureReason";
 
 export const performCheck = async (
   check: ResolvedCheckConfig,
@@ -22,23 +23,14 @@ export const performCheck = async (
         signal: AbortSignal.timeout(check.timeout),
       });
 
-      // Cancel response body since we only need status/headers
+      // Cancel response body since we only need status/headers/url
       response.body?.cancel();
 
-      const expectedCodes = check.expectedCodes;
-      const isExpected = expectedCodes.includes(response.status);
+      const failureReason = getCheckFailureReason(check, response);
 
-      if (isExpected) {
+      if (!failureReason) {
         return state;
       }
-
-      const isProtected =
-        response.headers.get("cf-access-domain") ||
-        [401, 403].includes(response.status);
-
-      const errorMessage = isProtected
-        ? `Protected by Zero Trust (HTTP ${response.status})`
-        : `HTTP ${response.status} ${response.statusText}`;
 
       if (attempt < maxAttempts) {
         console.warn(
@@ -48,7 +40,7 @@ export const performCheck = async (
       }
 
       state.status = "down";
-      state.error = errorMessage;
+      state.error = failureReason;
       return state;
     } catch (error) {
       console.error(`[performCheck] ${check.name} errored with`, error);
