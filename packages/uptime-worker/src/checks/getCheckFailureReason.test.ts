@@ -36,7 +36,7 @@ describe("getCheckFailureReason", () => {
       "https://example.com/cdn-cgi/access/login",
     );
     expect(getCheckFailureReason(baseCheck, response)).toBe(
-      "Protected by Zero Trust login page (HTTP 200)",
+      "Protected by Cloudflare Access (HTTP 200)",
     );
   });
 
@@ -61,7 +61,7 @@ describe("getCheckFailureReason", () => {
       "https://example.com/cdn-cgi/access/error",
     );
     expect(getCheckFailureReason(baseCheck, response)).toBe(
-      "Protected by Zero Trust login page (HTTP 401)",
+      "Protected by Cloudflare Access (HTTP 401)",
     );
   });
 });
