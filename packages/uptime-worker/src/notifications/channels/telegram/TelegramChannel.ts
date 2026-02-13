@@ -1,12 +1,13 @@
 import { UPTIME_KV_KEYS } from "../../../constants";
 import { TelegramService } from "./TelegramService";
 import { NotificationChannel } from "../../NotificationChannel";
-import { ChannelName } from "../constants";
+import { ChannelName } from "../../constants";
 import {
   telegramDowntimeTemplate,
   telegramRecoveryTemplate,
 } from "./templates";
 import { NotificationContext } from "../../types";
+import { NotificationStateStore } from "../../NotificationStateStore";
 
 interface TelegramNotificationContext extends NotificationContext {
   statuspageUrl?: string;
@@ -15,10 +16,15 @@ interface TelegramNotificationContext extends NotificationContext {
 export class TelegramChannel extends NotificationChannel {
   name = ChannelName.Telegram;
   private statuspageUrl?: string;
+  private notificationStateStore: NotificationStateStore;
 
   constructor({ state, env, statuspageUrl }: TelegramNotificationContext) {
     super({ state, env });
     this.statuspageUrl = statuspageUrl;
+    this.notificationStateStore = new NotificationStateStore(
+      env.uptime,
+      this.name,
+    );
   }
 
   async notify(): Promise<void> {
