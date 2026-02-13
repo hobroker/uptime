@@ -96,4 +96,62 @@ describe("NotificationStateStore", () => {
     );
     expect(state?.lastMessageId).toBe("2");
   });
+
+  it("should retrieve last failed checks correctly", async () => {
+    const failedChecks = ["check-1", "check-2"];
+
+    // Test empty state
+    expect(await store.getLastFailedChecks()).toEqual([]);
+
+    // Set state
+    await store.updateLastFailedChecks(failedChecks);
+
+    // Test retrieval
+    const retrieved = await store.getLastFailedChecks();
+    expect(retrieved).toEqual(failedChecks);
+
+    // Verify it's reading from the correct key
+    expect(mockKv.get).toHaveBeenCalledWith(
+      `${UPTIME_KV_KEYS.notificationState}:lastFailedChecks`,
+    );
+  });
+
+  it("should delete channel state when updater returns undefined", async () => {
+    const channel = ChannelName.Telegram;
+    const initialState = { lastMessageId: "123" };
+    await store.updateChannelState(channel, initialState);
+
+    // Verify it exists
+    expect(await store.getChannelState(channel)).toEqual(initialState);
+
+    // Update with undefined to delete
+    await store.updateChannelState(channel, undefined);
+
+    // Verify it is gone
+    expect(await store.getChannelState(channel)).toBeUndefined();
+    expect(mockKv.delete).toHaveBeenCalledWith(
+      `${UPTIME_KV_KEYS.notificationState}:channel:${channel}`,
+    );
+  });
+
+  it("should delete channel state when updater function returns undefined", async () => {
+    const channel = ChannelName.Telegram;
+    await store.updateChannelState(channel, { lastMessageId: "123" });
+
+    await store.updateChannelState(channel, () => undefined);
+
+    expect(await store.getChannelState(channel)).toBeUndefined();
+    expect(mockKv.delete).toHaveBeenCalled();
+  });
+
+  it("should handle errors during migration gracefully", async () => {
+    const channel = ChannelName.Telegram;
+
+    // Set invalid JSON in old state
+    await mockKv.put(UPTIME_KV_KEYS.notificationState, "invalid-json");
+
+    const state = await store.getChannelState(channel);
+
+    expect(state).toBeUndefined();
+  });
 });

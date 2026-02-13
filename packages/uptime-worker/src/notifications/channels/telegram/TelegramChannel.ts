@@ -35,6 +35,25 @@ export class TelegramChannel extends NotificationChannel {
     // Handle case where we already notified about downtime
     if (lastNotificationId) {
       if (isAnyCheckDown) {
+        const lastFailedChecks =
+          await this.notificationStateStore.getLastFailedChecks();
+        const currentFailedChecks = this.failedChecks.map((c) => c.name);
+        const hasChanged =
+          lastFailedChecks.length !== currentFailedChecks.length ||
+          !lastFailedChecks.every((name) => currentFailedChecks.includes(name));
+
+        if (hasChanged) {
+          console.log(
+            "[TelegramChannel] Failed checks changed, updating Telegram notification",
+          );
+          await this.updateDowntimeNotification({
+            telegramService,
+            lastNotificationId,
+            statuspageUrl: this.statuspageUrl,
+          });
+          return;
+        }
+
         console.log(
           "[TelegramChannel] Already notified via Telegram about downtime, skipping notification",
         );
@@ -110,6 +129,32 @@ export class TelegramChannel extends NotificationChannel {
 
     console.log(
       "[TelegramChannel] All checks are up, sent Telegram notification about recovery",
+    );
+  }
+
+  private async updateDowntimeNotification({
+    telegramService,
+    lastNotificationId,
+    statuspageUrl,
+  }: {
+    telegramService: TelegramService;
+    lastNotificationId: string;
+    statuspageUrl?: string;
+  }): Promise<void> {
+    console.log(`[TelegramChannel] updating downtime message`);
+
+    const formatted = telegramDowntimeTemplate({
+      failedChecks: this.failedChecks,
+      statuspageUrl,
+    });
+    await telegramService.editMessage({
+      chatId: this.env.TELEGRAM_CHAT_ID,
+      messageId: parseInt(lastNotificationId, 10),
+      message: formatted,
+    });
+
+    console.log(
+      "[TelegramChannel] Updated Telegram notification about downtime",
     );
   }
 

@@ -56,4 +56,9 @@ export class NotificationStateStore {
   async updateLastFailedChecks(checkIds: string[]): Promise<void> {
     await this.kv.put(this.lastFailedChecksKey, JSON.stringify(checkIds));
   }
+
+  async getLastFailedChecks(): Promise<string[]> {
+    const doc = await this.kv.get(this.lastFailedChecksKey);
+    return doc ? JSON.parse(doc) : [];
+  }
 }
