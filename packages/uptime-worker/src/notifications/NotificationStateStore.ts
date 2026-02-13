@@ -32,6 +32,12 @@ export class NotificationStateStore {
     await this.kv.put(UPTIME_KV_KEYS.notificationState, JSON.stringify(state));
   }
 
+  async updateLastFailedChecks(checkIds: string[]): Promise<void> {
+    const state = await this.getState();
+    state.lastFailedChecks = checkIds;
+    await this.kv.put(UPTIME_KV_KEYS.notificationState, JSON.stringify(state));
+  }
+
   private async getState(): Promise<NotificationState> {
     const defaultState: NotificationState = {
       lastFailedChecks: [],

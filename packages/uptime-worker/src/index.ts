@@ -35,6 +35,12 @@ export default {
     // Notify all channels (Statuspage, Telegram, etc.)
     await notificationService.notifyAll();
 
+    // Update the notification state with the latest failed checks
+    await notificationService.updateNotificationState({
+      kv: env.uptime,
+      state,
+    });
+
     // Keep the cron string for debugging; controller.cron is provided by Workers runtime
     console.log(`[scheduled] trigger fired at ${controller.cron}`);
     ctx.waitUntil(Promise.resolve());
