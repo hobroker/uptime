@@ -1,5 +1,6 @@
 import { ResolvedCheckConfig, CheckResult } from "../types";
 import { getCheckFailureReason } from "./getCheckFailureReason";
+import { sleep } from "../util/sleep";
 
 export const performCheck = async (
   check: ResolvedCheckConfig,
@@ -33,9 +34,11 @@ export const performCheck = async (
       }
 
       if (attempt < maxAttempts) {
+        const delay = Math.pow(2, attempt - 1) * 1000;
         console.warn(
-          `[performCheck] ${check.name} failed (attempt ${attempt}/${maxAttempts}), retrying...`,
+          `[performCheck] ${check.name} failed (attempt ${attempt}/${maxAttempts}), retrying in ${delay}ms...`,
         );
+        await sleep(delay);
         continue;
       }
 
@@ -45,9 +48,11 @@ export const performCheck = async (
     } catch (error) {
       console.error(`[performCheck] ${check.name} errored with`, error);
       if (attempt < maxAttempts) {
+        const delay = Math.pow(2, attempt - 1) * 1000;
         console.warn(
-          `[performCheck] ${check.name} error (attempt ${attempt}/${maxAttempts}), retrying...`,
+          `[performCheck] ${check.name} error (attempt ${attempt}/${maxAttempts}), retrying in ${delay}ms...`,
         );
+        await sleep(delay);
         continue;
       }
       state.status = "down";

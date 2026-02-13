@@ -94,4 +94,34 @@ describe("performCheck", () => {
     expect(result.error).toBeUndefined();
     expect(mockFetch).toHaveBeenCalledTimes(2);
   });
+
+  it("verifies exponential backoff timing", async () => {
+    vi.useFakeTimers();
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce(makeResponse(500, "Internal Server Error"))
+      .mockResolvedValueOnce(makeResponse(500, "Internal Server Error"))
+      .mockResolvedValueOnce(makeResponse(200, "OK"));
+
+    vi.stubGlobal("fetch", mockFetch);
+
+    const promise = performCheck({ ...baseCheck, retryCount: 2 }, { env });
+
+    // First attempt fails, should be waiting 1s
+    await vi.advanceTimersByTimeAsync(0); // process initial fetch
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+
+    // After 1s, second attempt should trigger
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+
+    // Second attempt fails, should be waiting 2s
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(mockFetch).toHaveBeenCalledTimes(3);
+
+    const result = await promise;
+    expect(result.status).toBe("up");
+
+    vi.useRealTimers();
+  });
 });
