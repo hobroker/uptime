@@ -6,9 +6,11 @@ const makeResponse = (
   status: number,
   statusText: string,
   headers: Record<string, string> = {},
+  url = "https://api.example.com",
 ) => ({
   status,
   statusText,
+  url,
   headers: {
     get: (key: string) => headers[key] ?? null,
   },
