@@ -36,14 +36,14 @@ export class NotificationStateStore {
 
   async updateChannelState<T>(
     channel: ChannelName,
-    updater: ((prev: T | undefined) => T | undefined) | T | undefined,
+    updater: ((prev: T) => T | undefined) | T | undefined,
   ): Promise<void> {
     const key = this.getChannelKey(channel);
     const prev = await this.getChannelState<T>(channel);
 
     const next =
       typeof updater === "function"
-        ? (updater as (prev: T | undefined) => T | undefined)(prev)
+        ? (updater as (prev: T | undefined) => T | undefined)(prev ?? ({} as T))
         : updater;
 
     if (next === undefined) {
