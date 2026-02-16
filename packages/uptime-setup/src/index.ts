@@ -1,6 +1,6 @@
 import { execSync, exec } from "node:child_process";
 import { promisify } from "node:util";
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import {
   intro,
@@ -14,10 +14,12 @@ import {
 } from "@clack/prompts";
 import pc from "picocolors";
 
+import { fileURLToPath } from "node:url";
+
 const execAsync = promisify(exec);
 const setupCancelError = new Error("Setup cancelled.");
 
-async function main() {
+export async function main() {
   intro(`${pc.bgCyan(pc.black(" Uptime Setup "))}`);
 
   const projectDir = join(process.cwd(), "../..");
@@ -249,10 +251,17 @@ ${pc.white("Next steps:")}
 `);
 }
 
-main().catch((error) => {
-  if (error === setupCancelError) {
-    process.exit(0);
-  }
-  console.error(error);
-  process.exit(1);
-});
+const isMain =
+  process.argv[1] &&
+  existsSync(process.argv[1]) &&
+  fileURLToPath(import.meta.url) === realpathSync(process.argv[1]);
+
+if (isMain) {
+  main().catch((error) => {
+    if (error === setupCancelError) {
+      process.exit(0);
+    }
+    console.error(error);
+    process.exit(1);
+  });
+}
