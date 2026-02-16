@@ -45,7 +45,7 @@ export async function main() {
         ? `Logged in to ${pc.cyan("Cloudflare")}`
         : "Not logged in to Cloudflare",
     );
-  } catch (e) {
+  } catch {
     loginSpinner.stop("Not logged in to Cloudflare");
   }
 

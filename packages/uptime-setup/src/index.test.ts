@@ -49,7 +49,7 @@ describe("Setup Script", () => {
 
   it("should run through the setup steps", async () => {
     // Mock whoami to return logged in
-    const mockExec = vi.mocked(execSync);
+    vi.mocked(execSync);
 
     await main();
 

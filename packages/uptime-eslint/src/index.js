@@ -30,6 +30,13 @@ export function defineConfig(...configs) {
         ],
       },
     },
+    {
+      languageOptions: {
+        parserOptions: {
+          tsconfigRootDir: import.meta.dirname,
+        },
+      },
+    },
     ...configs,
   );
 }
