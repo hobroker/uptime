@@ -2,6 +2,7 @@ import { execSync, exec } from "node:child_process";
 import { promisify } from "node:util";
 import { readFileSync, writeFileSync, existsSync, realpathSync } from "node:fs";
 import { join } from "node:path";
+import { parse, applyEdits, modify } from "jsonc-parser";
 import {
   intro,
   confirm,
@@ -28,7 +29,6 @@ export async function main() {
 
   // 1. Check Cloudflare Login Status
   let isLoggedIn = false;
-  let userEmail = "";
 
   const loginSpinner = spinner();
   loginSpinner.start("Checking Cloudflare login status...");
@@ -65,18 +65,22 @@ export async function main() {
         log.error(
           'Login failed. You might need to run "npx wrangler login" manually.',
         );
+        console.error(e);
       }
     }
   }
 
   // 2. Project Name
   let currentProjectName = "uptime-worker";
+  const wranglerContent = readFileSync(wranglerPath, "utf8");
   try {
-    const wranglerConfig = JSON.parse(
-      readFileSync(wranglerPath, "utf8").replace(/\/\/.*$/gm, ""),
-    );
+    const wranglerConfig = parse(wranglerContent);
     currentProjectName = wranglerConfig.name || "uptime-worker";
-  } catch (e) {}
+  } catch (e) {
+    log.error("Failed to parse wrangler.jsonc");
+    console.error(e);
+    process.exit(1);
+  }
 
   const projectName = await text({
     message: "What should be the name of your project on Cloudflare?",
@@ -96,13 +100,11 @@ export async function main() {
     const s = spinner();
     s.start(`Updating project name to ${pc.cyan(projectName)}...`);
 
-    // Update wrangler.jsonc
-    let wranglerContent = readFileSync(wranglerPath, "utf8");
-    wranglerContent = wranglerContent.replace(
-      /"name":\s*"[^"]*"/,
-      `"name": "${projectName}"`,
-    );
-    writeFileSync(wranglerPath, wranglerContent);
+    const edits = modify(wranglerContent, ["name"], projectName, {
+      formattingOptions: { insertSpaces: true, tabSize: 2 },
+    });
+    const updatedContent = applyEdits(wranglerContent, edits);
+    writeFileSync(wranglerPath, updatedContent);
 
     s.stop(`Project name updated to ${pc.cyan(projectName)}`);
   }
@@ -132,13 +134,24 @@ export async function main() {
         `Found KV namespace: ${pc.cyan(existingKV.title)} (${pc.green(existingKV.id)})`,
       );
 
-      let content = readFileSync(wranglerPath, "utf8");
-      content = content.replace(
-        /("binding":\s*"uptime",\s*"id":\s*")[a-f0-9]+"/,
-        `$1${existingKV.id}"`,
+      const content = readFileSync(wranglerPath, "utf8");
+      const config = parse(content);
+      const kvIndex = config.kv_namespaces?.findIndex(
+        (kv: any) => kv.binding === "uptime",
       );
-      writeFileSync(wranglerPath, content);
-      log.success(`Updated wrangler.jsonc with KV ID.`);
+
+      if (kvIndex !== -1) {
+        const edits = modify(
+          content,
+          ["kv_namespaces", kvIndex, "id"],
+          existingKV.id,
+          {
+            formattingOptions: { insertSpaces: true, tabSize: 2 },
+          },
+        );
+        writeFileSync(wranglerPath, applyEdits(content, edits));
+        log.success(`Updated wrangler.jsonc with KV ID.`);
+      }
     } else {
       kvSpinner.stop("No matching KV namespace found.");
 
@@ -155,13 +168,32 @@ export async function main() {
 
       if (idMatch && existsSync(wranglerPath)) {
         const kvId = idMatch[1];
-        let content = readFileSync(wranglerPath, "utf8");
-        content = content.replace(
-          /("binding":\s*"uptime",\s*"id":\s*")[a-f0-9]+"/,
-          `$1${kvId}"`,
+        const content = readFileSync(wranglerPath, "utf8");
+        const config = parse(content);
+        const kvIndex = config.kv_namespaces?.findIndex(
+          (kv: any) => kv.binding === "uptime",
         );
-        writeFileSync(wranglerPath, content);
-        s.stop(`Created KV and updated wrangler.jsonc (ID: ${pc.green(kvId)})`);
+
+        if (kvIndex !== -1) {
+          const edits = modify(
+            content,
+            ["kv_namespaces", kvIndex, "id"],
+            kvId,
+            {
+              formattingOptions: { insertSpaces: true, tabSize: 2 },
+            },
+          );
+          writeFileSync(wranglerPath, applyEdits(content, edits));
+          s.stop(
+            `Created KV and updated wrangler.jsonc (ID: ${pc.green(kvId)})`,
+          );
+        } else {
+          s.stop(
+            pc.yellow(
+              "Created KV, but could not find 'uptime' binding in wrangler.jsonc to update.",
+            ),
+          );
+        }
       } else {
         s.stop(
           pc.yellow(
@@ -172,6 +204,7 @@ export async function main() {
     }
   } catch (e) {
     kvSpinner.stop(pc.red("Failed to check KV namespaces."));
+    console.error(e);
   }
 
   // 4. Secrets
@@ -218,6 +251,7 @@ export async function main() {
           });
         } catch (e) {
           log.error(`Failed to set secret ${key}`);
+          console.error(e);
         }
       }
     }
@@ -241,6 +275,7 @@ export async function main() {
     tsSpinner.stop("Types generated!");
   } catch (e) {
     tsSpinner.stop(pc.red("Failed to generate types."));
+    console.error(e);
   }
 
   outro(`✨ ${pc.cyan("Setup complete!")} 

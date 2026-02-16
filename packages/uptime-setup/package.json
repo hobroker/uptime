@@ -13,5 +13,8 @@
     "picocolors": "^1.1.1",
     "tsx": "^4.19.3",
     "vitest": "^4.0.18"
+  },
+  "dependencies": {
+    "jsonc-parser": "^3.3.1"
   }
 }

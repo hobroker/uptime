@@ -89,7 +89,7 @@
          name: "API Health",
          target: "https://api.example.com/health",
          method: "GET",
-         expectedStatus: 200,
+         expectedCodes: [200],
        },
      ],
    };
