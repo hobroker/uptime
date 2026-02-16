@@ -8,9 +8,9 @@ vi.mock("node:child_process", () => ({
   execSync: vi.fn(),
   exec: vi.fn((cmd, opts, callback) => {
     if (typeof opts === "function") {
-      opts(null, { stdout: "" }, "");
+      opts(null, { stdout: "[]" }, "");
     } else if (callback) {
-      callback(null, { stdout: "" }, "");
+      callback(null, { stdout: "[]" }, "");
     }
   }),
 }));

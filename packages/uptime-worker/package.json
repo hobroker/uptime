@@ -15,6 +15,7 @@
   "devDependencies": {
     "@eslint/js": "^v9.39.2",
     "@hobroker/uptime-eslint": "*",
+    "@hobroker/uptime-test": "*",
     "@hobroker/uptime-tsconfig": "*",
     "eslint": "^v9.39.2",
     "lint-staged": "^16.2.7",
