@@ -27,7 +27,7 @@
 
 - **Active Monitoring**: Periodically checks the availability of configured targets.
 - **Serverless**: Runs on Cloudflare Workers with minimal infrastructure overhead.
-- **Telegram Alerts**: Sends a single downtime alert per incident and a recovery message when all checks are healthy again.
+- **Telegram Alerts**: Sends notifications that dynamically update to accurately reflect the current state of all checks.
 - **Statuspage Sync (Optional)**: Maps each check to a Statuspage component and updates its status.
 - **Zero Trust Support**: Works with sites behind Cloudflare Zero Trust via client credentials.
 
@@ -36,9 +36,8 @@
 1. Configure a list of checks in `uptime.config.ts`.
 2. A scheduled Cloudflare Worker runs on a cron defined in `packages/uptime-worker/wrangler.jsonc`.
 3. Each check is performed; results are stored in Workers KV (state + last-checked timestamp).
-4. If any check fails, a single Telegram alert is sent and subsequent alerts are suppressed for that incident.
-5. When all checks recover, a Telegram recovery message is sent.
-6. If Statuspage.io credentials are configured, each check is synced to a Statuspage component.
+4. If any check fails, a Telegram alert is sent and subsequently updated to accurately reflect the state of all checks until full recovery.
+5. If Statuspage.io credentials are configured, each check is synced to a Statuspage component.
 
 ## Tech Stack
 
@@ -47,6 +46,7 @@
 - [Wrangler](https://developers.cloudflare.com/workers/wrangler/) for development and deployment
 - [TypeScript](https://www.typescriptlang.org/)
 - [Telegram Bot API](https://core.telegram.org/bots/api) (via [grammy](https://grammy.dev/))
+- [LiquidJS](https://liquidjs.com/) for template parsing
 - [Statuspage API](https://developer.statuspage.io/) (optional)
 - GitHub Actions (optional deployment)
 
@@ -75,7 +75,25 @@
    - Prepare your local environment.
 
 3. **Configure your monitors**:
-   Edit `packages/uptime-worker/uptime.config.ts` to add the targets you want to monitor.
+   Edit `packages/uptime-worker/uptime.config.ts`. Here's a basic example:
+
+   ```typescript
+   export const uptimeWorkerConfig: UptimeWorkerConfig = {
+     checks: [
+       {
+         name: "My Website",
+         target: "https://example.com",
+         retryCount: 2,
+       },
+       {
+         name: "API Health",
+         target: "https://api.example.com/health",
+         method: "GET",
+         expectedStatus: 200,
+       },
+     ],
+   };
+   ```
 
 4. **Deploy**:
    ```shell
@@ -104,28 +122,27 @@ To enable automatic deployments from GitHub Actions, you'll need to set up a Clo
    - Go to your GitHub repository
    - Navigate to **Settings** > **Secrets and variables** > **Actions**
    - Click **New repository secret**
-   - Name: `CLOUDFLARE_API_TOKEN`
-   - Value: Your generated Cloudflare API token
+     - Name: `CLOUDFLARE_API_TOKEN`
+     - Value: Your generated Cloudflare API token
 3. The GitHub Actions workflow will automatically deploy your changes when you push to the main branch.
 
 ### Local Development
 
-1. Install dependencies:
+1. **Install dependencies**:
    ```shell
    npm install
    ```
-2. Create a `.dev.vars` file in the `packages/uptime-worker/` directory with the following content:
-   ```plaintext
-   CF_ACCESS_CLIENT_ID=<value>
-   CF_ACCESS_CLIENT_SECRET=<value>
-   TELEGRAM_BOT_TOKEN=<value>
-   TELEGRAM_CHAT_ID=<value>
+2. **Setup environment**:
+   Run the interactive setup to automatically create your `.dev.vars` file and generate types:
+   ```shell
+   npm run setup
    ```
-3. Start the development server:
+3. **Start development server**:
    ```shell
    npm run dev
    ```
-4. Test the worker locally by calling the scheduled endpoint. This simulates a scheduled CRON event locally using the `__scheduled` endpoint.
+4. **Test the worker locally**:
+   Uptime uses Cloudflare Cron Triggers. You can simulate a cron event locally by calling the `/__scheduled` endpoint:
    ```shell
    curl "http://localhost:8787/__scheduled?cron=*+*+*+*+*"
    ```
@@ -140,12 +157,16 @@ Once deployed, Uptime will automatically run on the configured cron schedule, pe
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit issues or pull requests to improve Uptime.
-Before submitting a PR, please run:
+Contributions are welcome! Please feel free to submit issues or pull requests.
 
-```bash
-npm run lint
-```
+### Development Workflow
+
+1.  **Check types**: `npm run ts-check`
+2.  **Lint**: `npm run lint`
+3.  **Format**: `npm run format`
+4.  **Test**: `npm run test`
+
+Before submitting a PR, please ensure all the above checks pass. We use [Turbo](https://turbo.build/) to manage the monorepo, so these commands will run across all packages.
 
 ## License
 
