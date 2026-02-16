@@ -1,0 +1,10 @@
+# Telegram Bot Configuration (Required for notifications)
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
+
+# Statuspage.io Configuration (Optional)
+# STATUSPAGE_IO_API_KEY=
+# STATUSPAGE_IO_PAGE_ID=
+
+# Note: You can add any other secrets here that you might use 
+# in your uptime.config.ts (e.g. for custom auth headers)

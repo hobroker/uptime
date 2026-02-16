@@ -52,88 +52,48 @@
 
 ## Getting Started
 
-### Prerequisites
+### Quick Start
 
-- A Cloudflare account
-- A [Telegram bot](https://core.telegram.org/bots#how-do-i-create-a-bot) and a chat for notifications
+1. **Clone the repository**:
 
-### Environment Setup
-
-1. Create a KV namespace for storing check states:
    ```shell
-   cd packages/uptime-worker/
-   npx wrangler kv namespace uptime
-   ```
-   This will output a namespace ID, which you need to add to your `wrangler.json` file under the `kv_namespaces` section:
-   ```json
-   {
-     "kv_namespaces": [
-       {
-         "binding": "uptime",
-         "id": "<your-namespace-id>"
-       }
-     ]
-   }
-   ```
-2. Add the Telegram secrets to your Cloudflare Workers environment variables:
-   ```shell
-   cd packages/uptime-worker/
-   npx wrangler secret put TELEGRAM_BOT_TOKEN
-   npx wrangler secret put TELEGRAM_CHAT_ID
-   ```
-3. Optional: Configure Statuspage.io sync if you want component updates.
-   ```shell
-   cd packages/uptime-worker/
-   npx wrangler secret put STATUSPAGE_IO_API_KEY
-   npx wrangler secret put STATUSPAGE_IO_PAGE_ID
-   ```
-4. Optionally, set up Cloudflare Zero Trust if your websites are protected by it.
-   ```shell
-   cd packages/uptime-worker/
-   npx wrangler secret put CF_ACCESS_CLIENT_ID
-   npx wrangler secret put CF_ACCESS_CLIENT_SECRET
+   git clone https://github.com/hobroker/uptime.git
+   cd uptime
    ```
 
-### Installation
+2. **Run the interactive setup**:
 
-1. Clone or download the Uptime repository.
-2. Install the required dependencies:
    ```shell
    npm install
+   npm run setup
    ```
-3. Generate the Cloudflare type definitions:
-   ```shell
-   npm run cf-typegen
-   ```
-4. Configure your list of targets to check in the [configuration file](uptime.config.ts). Example:
-   ```typescript
-   export default {
-     checks: [
-       {
-         name: "Example Site",
-         target: "https://example.com",
-         probeTarget: "https://status.example.com", // Optional: URL to probe (defaults to target)
-         expectedCodes: [200], // Optional: Expected HTTP status codes (defaults to [200])
-         timeout: 5000, // Optional: Request timeout in ms (defaults to 5000)
-         headers: undefined, // Optional: Additional headers to send with the request
-         body: undefined, // Optional: Body to send with the request (for POST or PUT requests)
-       },
-       // Add more checks as needed
-     ],
-   };
-   ```
-5. Deploy the project to Cloudflare Workers:
+
+   This script will help you:
+   - Login to Cloudflare.
+   - Create the required KV namespace and update your configuration.
+   - Set up your Telegram and optional Statuspage secrets.
+   - Prepare your local environment.
+
+3. **Configure your monitors**:
+   Edit `packages/uptime-worker/uptime.config.ts` to add the targets you want to monitor.
+
+4. **Deploy**:
    ```shell
    npm run deploy
    ```
 
-### Manual Deployment
+### Prerequisites
 
-Deploy Uptime to Cloudflare Workers using the following command:
+- A [Cloudflare](https://www.cloudflare.com/) account.
+- A [Telegram bot](https://core.telegram.org/bots#how-do-i-create-a-bot) and a chat for notifications.
 
-```shell
-npm run deploy
-```
+### Manual Setup (Optional)
+
+If you prefer to set up everything manually, follow these steps:
+
+1. **KV Namespace**: Create a KV namespace named `uptime` and add its ID to `packages/uptime-worker/wrangler.jsonc`.
+2. **Secrets**: Use `npx wrangler secret put` for `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, and other optional credentials.
+3. **Local Vars**: Copy `packages/uptime-worker/.dev.vars.example` to `packages/uptime-worker/.dev.vars` and fill in the values.
 
 ### Automatic Deployment from GitHub
 
