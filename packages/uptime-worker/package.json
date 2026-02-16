@@ -14,9 +14,9 @@
   },
   "devDependencies": {
     "@eslint/js": "^v9.39.2",
+    "@hobroker/uptime-eslint": "*",
+    "@hobroker/uptime-tsconfig": "*",
     "eslint": "^v9.39.2",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-unused-imports": "^4.4.1",
     "lint-staged": "^16.2.7",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.54.0",

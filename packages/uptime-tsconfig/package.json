@@ -1,0 +1,8 @@
+{
+  "name": "@hobroker/uptime-tsconfig",
+  "version": "1.0.0",
+  "private": true,
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260214.0"
+  }
+}

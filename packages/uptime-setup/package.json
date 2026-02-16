@@ -5,13 +5,21 @@
   "type": "module",
   "scripts": {
     "start": "tsx src/index.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "eslint \"**/*.{ts,mjs,json}\"",
+    "lint:fix": "npm run lint -- --fix",
+    "format": "prettier --write \"**/*.{ts,mjs,json}\"",
+    "ts-check": "tsc --noEmit"
   },
   "devDependencies": {
     "@clack/prompts": "^0.9.1",
+    "@hobroker/uptime-eslint": "*",
+    "@hobroker/uptime-tsconfig": "*",
     "@types/node": "^25.2.3",
+    "eslint": "^9.39.2",
     "picocolors": "^1.1.1",
     "tsx": "^4.19.3",
+    "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },
   "dependencies": {
