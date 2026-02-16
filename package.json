@@ -6,6 +6,7 @@
   "description": "Uptime monitoring service",
   "scripts": {
     "dev": "turbo run dev",
+    "setup": "npm start --workspace=@hobroker/uptime-setup",
     "deploy": "turbo run deploy",
     "test": "turbo run test",
     "cf-typegen": "turbo run cf-typegen",

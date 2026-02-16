@@ -27,7 +27,7 @@
 
 - **Active Monitoring**: Periodically checks the availability of configured targets.
 - **Serverless**: Runs on Cloudflare Workers with minimal infrastructure overhead.
-- **Telegram Alerts**: Sends a single downtime alert per incident and a recovery message when all checks are healthy again.
+- **Telegram Alerts**: Sends notifications that dynamically update to accurately reflect the current state of all checks.
 - **Statuspage Sync (Optional)**: Maps each check to a Statuspage component and updates its status.
 - **Zero Trust Support**: Works with sites behind Cloudflare Zero Trust via client credentials.
 
@@ -36,9 +36,8 @@
 1. Configure a list of checks in `uptime.config.ts`.
 2. A scheduled Cloudflare Worker runs on a cron defined in `packages/uptime-worker/wrangler.jsonc`.
 3. Each check is performed; results are stored in Workers KV (state + last-checked timestamp).
-4. If any check fails, a single Telegram alert is sent and subsequent alerts are suppressed for that incident.
-5. When all checks recover, a Telegram recovery message is sent.
-6. If Statuspage.io credentials are configured, each check is synced to a Statuspage component.
+4. If any check fails, a Telegram alert is sent and subsequently updated to accurately reflect the state of all checks until full recovery.
+5. If Statuspage.io credentials are configured, each check is synced to a Statuspage component.
 
 ## Tech Stack
 
@@ -47,93 +46,72 @@
 - [Wrangler](https://developers.cloudflare.com/workers/wrangler/) for development and deployment
 - [TypeScript](https://www.typescriptlang.org/)
 - [Telegram Bot API](https://core.telegram.org/bots/api) (via [grammy](https://grammy.dev/))
+- [LiquidJS](https://liquidjs.com/) for template parsing
 - [Statuspage API](https://developer.statuspage.io/) (optional)
 - GitHub Actions (optional deployment)
 
 ## Getting Started
 
-### Prerequisites
+### Quick Start
 
-- A Cloudflare account
-- A [Telegram bot](https://core.telegram.org/bots#how-do-i-create-a-bot) and a chat for notifications
+1. **Clone the repository**:
 
-### Environment Setup
-
-1. Create a KV namespace for storing check states:
    ```shell
-   cd packages/uptime-worker/
-   npx wrangler kv namespace uptime
-   ```
-   This will output a namespace ID, which you need to add to your `wrangler.json` file under the `kv_namespaces` section:
-   ```json
-   {
-     "kv_namespaces": [
-       {
-         "binding": "uptime",
-         "id": "<your-namespace-id>"
-       }
-     ]
-   }
-   ```
-2. Add the Telegram secrets to your Cloudflare Workers environment variables:
-   ```shell
-   cd packages/uptime-worker/
-   npx wrangler secret put TELEGRAM_BOT_TOKEN
-   npx wrangler secret put TELEGRAM_CHAT_ID
-   ```
-3. Optional: Configure Statuspage.io sync if you want component updates.
-   ```shell
-   cd packages/uptime-worker/
-   npx wrangler secret put STATUSPAGE_IO_API_KEY
-   npx wrangler secret put STATUSPAGE_IO_PAGE_ID
-   ```
-4. Optionally, set up Cloudflare Zero Trust if your websites are protected by it.
-   ```shell
-   cd packages/uptime-worker/
-   npx wrangler secret put CF_ACCESS_CLIENT_ID
-   npx wrangler secret put CF_ACCESS_CLIENT_SECRET
+   git clone https://github.com/hobroker/uptime.git
+   cd uptime
    ```
 
-### Installation
+2. **Run the interactive setup**:
 
-1. Clone or download the Uptime repository.
-2. Install the required dependencies:
    ```shell
    npm install
+   npm run setup
    ```
-3. Generate the Cloudflare type definitions:
-   ```shell
-   npm run cf-typegen
-   ```
-4. Configure your list of targets to check in the [configuration file](uptime.config.ts). Example:
+
+   This script will help you:
+   - Login to Cloudflare.
+   - Create the required KV namespace and update your configuration.
+   - Set up your Telegram and optional Statuspage secrets.
+   - Prepare your local environment.
+
+3. **Configure your monitors**:
+   Edit `packages/uptime-worker/uptime.config.ts`. Here's a basic example:
+
    ```typescript
-   export default {
+   export const uptimeWorkerConfig: UptimeWorkerConfig = {
      checks: [
        {
-         name: "Example Site",
+         name: "My Website",
          target: "https://example.com",
-         probeTarget: "https://status.example.com", // Optional: URL to probe (defaults to target)
-         expectedCodes: [200], // Optional: Expected HTTP status codes (defaults to [200])
-         timeout: 5000, // Optional: Request timeout in ms (defaults to 5000)
-         headers: undefined, // Optional: Additional headers to send with the request
-         body: undefined, // Optional: Body to send with the request (for POST or PUT requests)
+         retryCount: 2,
        },
-       // Add more checks as needed
+       {
+         name: "API Health",
+         target: "https://api.example.com/health",
+         method: "GET",
+         expectedCodes: [200],
+       },
      ],
    };
    ```
-5. Deploy the project to Cloudflare Workers:
+
+4. **Deploy**:
    ```shell
    npm run deploy
    ```
 
-### Manual Deployment
+### Prerequisites
 
-Deploy Uptime to Cloudflare Workers using the following command:
+- A [Cloudflare](https://www.cloudflare.com/) account.
+- A [Telegram bot](https://core.telegram.org/bots#how-do-i-create-a-bot) and a chat for notifications.
 
-```shell
-npm run deploy
-```
+### Manual Setup (Optional)
+
+If you prefer to set up everything manually, follow these steps:
+
+1. **KV Namespace**: Create a KV namespace named `uptime` and add its ID to `packages/uptime-worker/wrangler.jsonc`.
+2. **Secrets**: Use `npx wrangler secret put` for `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, and other optional credentials.
+3. **Local Vars**: Copy `packages/uptime-worker/.dev.vars.example` to `packages/uptime-worker/.dev.vars` and fill in the values.
 
 ### Automatic Deployment from GitHub
 
@@ -144,28 +122,27 @@ To enable automatic deployments from GitHub Actions, you'll need to set up a Clo
    - Go to your GitHub repository
    - Navigate to **Settings** > **Secrets and variables** > **Actions**
    - Click **New repository secret**
-   - Name: `CLOUDFLARE_API_TOKEN`
-   - Value: Your generated Cloudflare API token
+     - Name: `CLOUDFLARE_API_TOKEN`
+     - Value: Your generated Cloudflare API token
 3. The GitHub Actions workflow will automatically deploy your changes when you push to the main branch.
 
 ### Local Development
 
-1. Install dependencies:
+1. **Install dependencies**:
    ```shell
    npm install
    ```
-2. Create a `.dev.vars` file in the `packages/uptime-worker/` directory with the following content:
-   ```plaintext
-   CF_ACCESS_CLIENT_ID=<value>
-   CF_ACCESS_CLIENT_SECRET=<value>
-   TELEGRAM_BOT_TOKEN=<value>
-   TELEGRAM_CHAT_ID=<value>
+2. **Setup environment**:
+   Run the interactive setup to automatically create your `.dev.vars` file and generate types:
+   ```shell
+   npm run setup
    ```
-3. Start the development server:
+3. **Start development server**:
    ```shell
    npm run dev
    ```
-4. Test the worker locally by calling the scheduled endpoint. This simulates a scheduled CRON event locally using the `__scheduled` endpoint.
+4. **Test the worker locally**:
+   Uptime uses Cloudflare Cron Triggers. You can simulate a cron event locally by calling the `/__scheduled` endpoint:
    ```shell
    curl "http://localhost:8787/__scheduled?cron=*+*+*+*+*"
    ```
@@ -180,12 +157,16 @@ Once deployed, Uptime will automatically run on the configured cron schedule, pe
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit issues or pull requests to improve Uptime.
-Before submitting a PR, please run:
+Contributions are welcome! Please feel free to submit issues or pull requests.
 
-```bash
-npm run lint
-```
+### Development Workflow
+
+1.  **Check types**: `npm run ts-check`
+2.  **Lint**: `npm run lint`
+3.  **Format**: `npm run format`
+4.  **Test**: `npm run test`
+
+Before submitting a PR, please ensure all the above checks pass. We use [Turbo](https://turbo.build/) to manage the monorepo, so these commands will run across all packages.
 
 ## License
 

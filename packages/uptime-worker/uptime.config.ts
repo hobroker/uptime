@@ -5,7 +5,15 @@ const zeroTrustAuth = ({ env }: { env: Env }) => ({
   "CF-Access-Client-Secret": env.CF_ACCESS_CLIENT_SECRET,
 });
 
+/**
+ * Configuration for Uptime Worker.
+ *
+ * To use secrets (e.g. for custom headers), add them via:
+ * 1. 'npx wrangler secret put NAME' for production
+ * 2. '.dev.vars' file for local development
+ */
 export const uptimeWorkerConfig: UptimeWorkerConfig = {
+  // Optional: Your Statuspage.io URL
   statuspageUrl: "https://hobroker.statuspage.io",
   checks: [
     {
