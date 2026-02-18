@@ -2,6 +2,8 @@ import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 import eslintConfigPrettier from "eslint-config-prettier";
 import unusedImports from "eslint-plugin-unused-imports";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 /**
  * @param {import('eslint').Linter.Config[]} configs
@@ -28,13 +30,6 @@ export function defineConfig(...configs) {
             argsIgnorePattern: "^_",
           },
         ],
-      },
-    },
-    {
-      languageOptions: {
-        parserOptions: {
-          tsconfigRootDir: import.meta.dirname,
-        },
       },
     },
     ...configs,
