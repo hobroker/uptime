@@ -1,0 +1,10 @@
+{
+  "name": "@hobroker/uptime-test",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.js",
+  "dependencies": {
+    "vitest": "^4.0.18"
+  }
+}

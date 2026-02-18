@@ -13,13 +13,12 @@
     "ts-check": "wrangler types && tsc --noEmit"
   },
   "devDependencies": {
-    "@eslint/js": "^v9.39.2",
+    "@hobroker/uptime-eslint": "*",
+    "@hobroker/uptime-test": "*",
+    "@hobroker/uptime-tsconfig": "*",
     "eslint": "^v9.39.2",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-unused-imports": "^4.4.1",
     "lint-staged": "^16.2.7",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.54.0",
     "vitest": "^4.0.18",
     "wrangler": "^4.63.0"
   },
