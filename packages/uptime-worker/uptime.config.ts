@@ -17,12 +17,6 @@ export const uptimeWorkerConfig: UptimeWorkerConfig = {
   statuspageUrl: "https://hobroker.statuspage.io",
   checks: [
     {
-      name: "Rancher",
-      target: "https://rancher.hobroker.me",
-      headers: zeroTrustAuth,
-      retryCount: 1,
-    },
-    {
       name: "Sonarr",
       target: "https://sonarr.hobroker.me",
       headers: zeroTrustAuth,
@@ -55,18 +49,6 @@ export const uptimeWorkerConfig: UptimeWorkerConfig = {
     {
       name: "VS Code",
       target: "https://code.hobroker.me",
-      headers: zeroTrustAuth,
-      retryCount: 1,
-    },
-    {
-      name: "Syncthing",
-      target: "https://syncthing.hobroker.me",
-      headers: zeroTrustAuth,
-      retryCount: 1,
-    },
-    {
-      name: "n8n",
-      target: "https://n8n.hobroker.me",
       headers: zeroTrustAuth,
       retryCount: 1,
     },
