@@ -53,12 +53,6 @@ export const uptimeWorkerConfig: UptimeWorkerConfig = {
       retryCount: 1,
     },
     {
-      name: "n8n",
-      target: "https://n8n.hobroker.me",
-      headers: zeroTrustAuth,
-      retryCount: 1,
-    },
-    {
       name: "http-echos-echo",
       target: "https://demo.hobroker.me",
       headers: zeroTrustAuth,
