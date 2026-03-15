@@ -10,21 +10,29 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6.2.0
         with:
-          node-version: 24
+          node-version: 25
       - name: Install dependencies
         run: npm ci
+      - name: Setup environment variables
+        run: |
+          cp packages/uptime-worker/.dev.vars.example packages/uptime-worker/.dev.vars
       - name: Generate types
         run: |
-          # Create .dev.vars file with environment variables for development
-          echo "# Environment variables for development
-          CF_ACCESS_CLIENT_ID=
-          CF_ACCESS_CLIENT_SECRET=
-          TELEGRAM_BOT_TOKEN=
-          TELEGRAM_CHAT_ID=" > packages/uptime-worker/.dev.vars
-
           # Generate Cloudflare types
           npm run cf-typegen
       - name: Run Linter
         run: npm run lint
       - name: Run TypeScript Check
         run: npm run ts-check
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - name: Setup Node.js
+        uses: actions/setup-node@v6.2.0
+        with:
+          node-version: 25
+      - name: Install dependencies
+        run: npm ci
+      - name: Run tests
+        run: npm test
