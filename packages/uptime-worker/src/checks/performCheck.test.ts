@@ -39,6 +39,12 @@ describe("performCheck", () => {
     }
   });
 
+  afterEach(() => {
+    // Guaranteed teardown: restore real timers even if a test throws before
+    // its own cleanup runs, so a fake clock never leaks into later tests.
+    vi.useRealTimers();
+  });
+
   it("returns up on first successful check", async () => {
     const mockFetch = vi.fn().mockResolvedValueOnce(makeResponse(200, "OK"));
 
@@ -67,7 +73,6 @@ describe("performCheck", () => {
     expect(result.status).toBe("up");
     expect(result.error).toBeUndefined();
     expect(mockFetch).toHaveBeenCalledTimes(2);
-    vi.useRealTimers();
   });
 
   it("marks down after exhausting retries", async () => {
@@ -85,7 +90,6 @@ describe("performCheck", () => {
     expect(result.status).toBe("down");
     expect(result.error).toBe("HTTP 503 Service Unavailable");
     expect(mockFetch).toHaveBeenCalledTimes(3);
-    vi.useRealTimers();
   });
 
   it("retries on thrown errors", async () => {
@@ -104,7 +108,6 @@ describe("performCheck", () => {
     expect(result.status).toBe("up");
     expect(result.error).toBeUndefined();
     expect(mockFetch).toHaveBeenCalledTimes(2);
-    vi.useRealTimers();
   });
 
   it("verifies exponential backoff timing", async () => {
@@ -133,7 +136,5 @@ describe("performCheck", () => {
 
     const result = await promise;
     expect(result.status).toBe("up");
-
-    vi.useRealTimers();
   });
 });
