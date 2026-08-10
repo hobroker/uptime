@@ -14,35 +14,41 @@ export default {
     );
   },
 
-  async scheduled(
-    controller: ScheduledController,
-    env: Env,
-    ctx: ExecutionContext,
-  ): Promise<void> {
-    // Get the current state of all checks
-    const state = await runChecks(uptimeWorkerConfig, { env });
+  async scheduled(controller: ScheduledController, env: Env): Promise<void> {
+    try {
+      // Get the current state of all checks
+      const state = await runChecks(uptimeWorkerConfig, { env });
 
-    console.log("[scheduled] state", state);
+      console.log("[scheduled] state", state);
 
-    const notificationService = new NotificationService([
-      new StatuspageChannel({ state, env }),
-      new TelegramChannel({
+      const notificationService = new NotificationService([
+        new StatuspageChannel({ state, env }),
+        new TelegramChannel({
+          state,
+          env,
+          statuspageUrl: uptimeWorkerConfig.statuspageUrl,
+        }),
+      ]);
+      // Notify all channels (Statuspage, Telegram, etc.)
+      await notificationService.notifyAll();
+
+      // Update the notification state with the latest failed checks
+      await notificationService.updateNotificationState({
+        kv: env.uptime,
         state,
-        env,
-        statuspageUrl: uptimeWorkerConfig.statuspageUrl,
-      }),
-    ]);
-    // Notify all channels (Statuspage, Telegram, etc.)
-    await notificationService.notifyAll();
+      });
 
-    // Update the notification state with the latest failed checks
-    await notificationService.updateNotificationState({
-      kv: env.uptime,
-      state,
-    });
-
-    // Keep the cron string for debugging; controller.cron is provided by Workers runtime
-    console.log(`[scheduled] trigger fired at ${controller.cron}`);
-    ctx.waitUntil(Promise.resolve());
+      // Keep the cron string for debugging; controller.cron is provided by Workers runtime
+      console.log(`[scheduled] trigger fired at ${controller.cron}`);
+    } catch (error) {
+      // Cloudflare only records an uncaught exception as the invocation
+      // summary (the cron template), hiding the real cause. Log the actual
+      // message/stack before rethrowing so the failure is diagnosable.
+      console.error(
+        "[scheduled] unhandled error",
+        error instanceof Error ? (error.stack ?? error.message) : error,
+      );
+      throw error;
+    }
   },
 } satisfies ExportedHandler<Env>;

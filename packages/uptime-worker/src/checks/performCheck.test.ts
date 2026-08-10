@@ -39,6 +39,12 @@ describe("performCheck", () => {
     }
   });
 
+  afterEach(() => {
+    // Guaranteed teardown: restore real timers even if a test throws before
+    // its own cleanup runs, so a fake clock never leaks into later tests.
+    vi.useRealTimers();
+  });
+
   it("returns up on first successful check", async () => {
     const mockFetch = vi.fn().mockResolvedValueOnce(makeResponse(200, "OK"));
 
@@ -52,6 +58,7 @@ describe("performCheck", () => {
   });
 
   it("retries failed status codes up to retryCount and succeeds", async () => {
+    vi.useFakeTimers();
     const mockFetch = vi
       .fn()
       .mockResolvedValueOnce(makeResponse(500, "Internal Server Error"))
@@ -59,7 +66,9 @@ describe("performCheck", () => {
 
     vi.stubGlobal("fetch", mockFetch);
 
-    const result = await performCheck({ ...baseCheck, retryCount: 1 }, { env });
+    const promise = performCheck({ ...baseCheck, retryCount: 1 }, { env });
+    await vi.runAllTimersAsync();
+    const result = await promise;
 
     expect(result.status).toBe("up");
     expect(result.error).toBeUndefined();
@@ -67,13 +76,16 @@ describe("performCheck", () => {
   });
 
   it("marks down after exhausting retries", async () => {
+    vi.useFakeTimers();
     const mockFetch = vi
       .fn()
       .mockResolvedValue(makeResponse(503, "Service Unavailable"));
 
     vi.stubGlobal("fetch", mockFetch);
 
-    const result = await performCheck({ ...baseCheck, retryCount: 2 }, { env });
+    const promise = performCheck({ ...baseCheck, retryCount: 2 }, { env });
+    await vi.runAllTimersAsync();
+    const result = await promise;
 
     expect(result.status).toBe("down");
     expect(result.error).toBe("HTTP 503 Service Unavailable");
@@ -81,6 +93,7 @@ describe("performCheck", () => {
   });
 
   it("retries on thrown errors", async () => {
+    vi.useFakeTimers();
     const mockFetch = vi
       .fn()
       .mockRejectedValueOnce(new Error("Network error"))
@@ -88,7 +101,9 @@ describe("performCheck", () => {
 
     vi.stubGlobal("fetch", mockFetch);
 
-    const result = await performCheck({ ...baseCheck, retryCount: 1 }, { env });
+    const promise = performCheck({ ...baseCheck, retryCount: 1 }, { env });
+    await vi.runAllTimersAsync();
+    const result = await promise;
 
     expect(result.status).toBe("up");
     expect(result.error).toBeUndefined();
@@ -107,21 +122,19 @@ describe("performCheck", () => {
 
     const promise = performCheck({ ...baseCheck, retryCount: 2 }, { env });
 
-    // First attempt fails, should be waiting 1s
+    // First attempt fails, should be waiting 5s
     await vi.advanceTimersByTimeAsync(0); // process initial fetch
     expect(mockFetch).toHaveBeenCalledTimes(1);
 
-    // After 1s, second attempt should trigger
-    await vi.advanceTimersByTimeAsync(1000);
+    // After 5s, second attempt should trigger
+    await vi.advanceTimersByTimeAsync(5000);
     expect(mockFetch).toHaveBeenCalledTimes(2);
 
-    // Second attempt fails, should be waiting 2s
-    await vi.advanceTimersByTimeAsync(2000);
+    // Second attempt fails, should be waiting 10s
+    await vi.advanceTimersByTimeAsync(10000);
     expect(mockFetch).toHaveBeenCalledTimes(3);
 
     const result = await promise;
     expect(result.status).toBe("up");
-
-    vi.useRealTimers();
   });
 });
