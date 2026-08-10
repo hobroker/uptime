@@ -1,8 +1,8 @@
 import { CheckResultList } from "../types";
 import { NotificationContext } from "./types";
 
-export class NotificationChannel {
-  public name = "base";
+export abstract class NotificationChannel {
+  public abstract readonly name: string;
   protected state: CheckResultList;
   protected env: Env;
 
@@ -11,7 +11,5 @@ export class NotificationChannel {
     this.env = env;
   }
 
-  public notify(): Promise<void> {
-    throw new Error("Notify method not implemented");
-  }
+  public abstract notify(): Promise<void>;
 }

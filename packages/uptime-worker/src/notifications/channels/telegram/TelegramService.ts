@@ -1,4 +1,4 @@
-import { Bot } from "grammy";
+import { Api } from "grammy";
 import { ApiMethods, ParseMode } from "grammy/types";
 
 type SendMessageOptions = Pick<
@@ -7,10 +7,13 @@ type SendMessageOptions = Pick<
 >;
 
 export class TelegramService {
-  private bot: Bot;
+  private api: Api;
 
   constructor({ token }: { token: string }) {
-    this.bot = new Bot(token);
+    // Use grammy's `Api` client directly rather than `Bot`: we only issue
+    // outbound API calls (send/edit), so we don't need the update-handling
+    // and long-polling machinery that `Bot` sets up.
+    this.api = new Api(token);
   }
 
   get defaultOptions(): SendMessageOptions & { parse_mode: ParseMode } {
@@ -29,7 +32,7 @@ export class TelegramService {
     message: string;
     options?: SendMessageOptions;
   }) {
-    return this.bot.api.sendMessage(chatId, message, {
+    return this.api.sendMessage(chatId, message, {
       ...this.defaultOptions,
       ...options,
     });
@@ -46,7 +49,7 @@ export class TelegramService {
     message: string;
     options?: SendMessageOptions;
   }) {
-    return this.bot.api.editMessageText(chatId, messageId, message, {
+    return this.api.editMessageText(chatId, messageId, message, {
       ...this.defaultOptions,
       ...options,
     });

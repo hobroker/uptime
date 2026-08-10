@@ -36,4 +36,26 @@ describe("resolveCheckConfig", () => {
     expect(resolved.timeout).toBe(2500);
     expect(resolved.retryCount).toBe(3);
   });
+
+  // Guards the `??` (not `||`) defaulting: an explicitly provided falsy value
+  // is a deliberate override and must be preserved, not replaced by the default.
+  it("preserves explicit falsy overrides instead of defaulting them", () => {
+    const input: CheckConfig = {
+      name: "api",
+      target: "https://api.example.com",
+      method: "",
+      probeTarget: "",
+      expectedCodes: [],
+      timeout: 0,
+      retryCount: 0,
+    };
+
+    const resolved = resolveCheckConfig(input);
+
+    expect(resolved.method).toBe("");
+    expect(resolved.probeTarget).toBe("");
+    expect(resolved.expectedCodes).toEqual([]);
+    expect(resolved.timeout).toBe(0);
+    expect(resolved.retryCount).toBe(0);
+  });
 });
