@@ -1,176 +1,280 @@
-# Uptime - Scheduled Uptime Monitoring on Cloudflare Workers
+# Uptime — Serverless Uptime Monitoring on Cloudflare Workers
 
-[![CI](https://github.com/hobroker/uptime/actions/workflows/ci.yaml/badge.svg)](https://github.com/hobroker/uptime/actions/workflows/ci.yaml) [![Deploy Worker](https://github.com/hobroker/uptime/actions/workflows/deploy.yaml/badge.svg)](https://github.com/hobroker/uptime/actions/workflows/deploy.yaml)
+[![CI](https://github.com/hobroker/uptime/actions/workflows/ci.yaml/badge.svg)](https://github.com/hobroker/uptime/actions/workflows/ci.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Made with TypeScript](https://img.shields.io/badge/Made%20with-TypeScript-blue)](https://www.typescriptlang.org/)
 
-**Uptime** is a lightweight, serverless monitoring service built on **Cloudflare Workers**. It runs on a cron schedule, performs a configurable list of health **checks**, stores the latest state in **Workers KV**, and sends **Telegram** alerts on downtime and recovery. Optionally, it can sync component status to **Statuspage.io**.
+**Uptime** is a lightweight, serverless monitoring service that runs on a **Cloudflare Workers** cron trigger. Every few minutes it performs a configurable list of health **checks**, and when something goes down it opens a **Telegram** thread and (optionally) drives incidents on **Statuspage.io** — then updates and resolves them automatically as services recover.
+
+It also watches itself: a **dead-man's-switch heartbeat** lets an external monitor alert you if the worker ever stops running.
+
+> [!NOTE]
+> There's no server to run and nothing to keep alive — the whole thing is one Cloudflare Worker plus a KV namespace.
 
 ## Table of Contents
 
 - [Features](#features)
 - [How It Works](#how-it-works)
+- [Repository Layout](#repository-layout)
 - [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
-  - [Environment Setup](#environment-setup)
-  - [Installation](#installation)
-  - [Manual Deployment](#manual-deployment)
-  - [Automatic Deployment from GitHub](#automatic-deployment-from-github)
-  - [Local Development](#local-development)
-- [Usage](#usage)
-  - [Example Telegram message](#example-telegram-message)
+  - [Quick Start](#quick-start)
+  - [Manual Setup](#manual-setup)
+- [Configuration](#configuration)
+  - [Checks](#checks)
+  - [Environment Variables & Secrets](#environment-variables--secrets)
+  - [Cron Schedule](#cron-schedule)
+- [Notifications](#notifications)
+- [Self-Monitoring (Dead-Man's-Switch)](#self-monitoring-dead-mans-switch)
+- [Deployment](#deployment)
+- [Local Development](#local-development)
+- [Scripts](#scripts)
 - [Contributing](#contributing)
 - [License](#license)
 
 ## Features
 
-- **Active Monitoring**: Periodically checks the availability of configured targets.
-- **Serverless**: Runs on Cloudflare Workers with minimal infrastructure overhead.
-- **Telegram Alerts**: Sends notifications that dynamically update to accurately reflect the current state of all checks.
-- **Statuspage Sync (Optional)**: Maps each check to a Statuspage component and updates its status.
-- **Zero Trust Support**: Works with sites behind Cloudflare Zero Trust via client credentials.
+- **Active monitoring** — periodically probes each configured target on a cron schedule.
+- **Resilient checks** — configurable timeout and retries with exponential backoff, so a single transient blip doesn't page you.
+- **Smart Telegram alerts** — a single downtime message that edits itself in place as the set of failing checks changes, then gets a recovery reply once everything is back.
+- **Statuspage.io sync (optional)** — maps each check to a component and manages the full incident lifecycle: open → update → resolve → postmortem.
+- **Cloudflare Zero Trust support** — probe sites behind Cloudflare Access using a service token, and treat an Access login page as a failure.
+- **Dead-man's-switch (optional)** — pings an external heartbeat monitor after each completed run, so you're alerted if the monitor itself stops running.
+- **Serverless** — runs entirely on Cloudflare Workers + Workers KV. No servers, no containers.
 
 ## How It Works
 
-1. Configure a list of checks in `uptime.config.ts`.
-2. A scheduled Cloudflare Worker runs on a cron defined in `packages/uptime-worker/wrangler.jsonc`.
-3. Each check is performed; results are stored in Workers KV (state + last-checked timestamp).
-4. If any check fails, a Telegram alert is sent and subsequently updated to accurately reflect the state of all checks until full recovery.
-5. If Statuspage.io credentials are configured, each check is synced to a Statuspage component.
+```mermaid
+flowchart LR
+    cron([Cron every 5 min]) --> checks[Run checks fetch + retry/backoff]
+    checks --> tg[Telegram alert]
+    checks --> sp[Statuspage incident]
+    tg --> kv[(Workers KV)]
+    checks --> hb([Heartbeat ping on success])
+```
+
+1. A scheduled Worker fires on the cron defined in `packages/uptime-worker/wrangler.jsonc` (default: every 5 minutes).
+2. Each check in `uptime.config.ts` is probed (up to 2 concurrently). A non-expected status code, a Cloudflare Access login page, or a timeout marks it **down** — after exhausting its retries.
+3. Results are handed to the notification channels:
+   - **Telegram** opens or edits a downtime message, and replies with a recovery notice when all checks pass again.
+   - **Statuspage** (if configured) sets each component's status and opens/updates/resolves a grouped incident.
+4. Each channel persists just the state it needs (e.g. the Telegram message id) in **Workers KV**.
+5. Once the cycle completes, an optional **heartbeat** ping is sent to an external dead-man's-switch.
+
+## Repository Layout
+
+This is an [npm workspaces](https://docs.npmjs.com/cli/using-npm/workspaces) + [Turborepo](https://turbo.build/) monorepo:
+
+| Package                    | Description                                                               |
+| -------------------------- | ------------------------------------------------------------------------- |
+| `packages/uptime-worker`   | The Cloudflare Worker: checks, notifications, and scheduling.             |
+| `packages/uptime-setup`    | Interactive CLI (`npm run setup`) that provisions Cloudflare and secrets. |
+| `packages/uptime-eslint`   | Shared ESLint config.                                                     |
+| `packages/uptime-test`     | Shared Vitest config.                                                     |
+| `packages/uptime-tsconfig` | Shared TypeScript config.                                                 |
 
 ## Tech Stack
 
-- [Cloudflare Workers](https://developers.cloudflare.com/workers/)
-- [Workers KV](https://developers.cloudflare.com/workers/runtime-apis/kv/)
-- [Wrangler](https://developers.cloudflare.com/workers/wrangler/) for development and deployment
+- [Cloudflare Workers](https://developers.cloudflare.com/workers/) + [Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/)
+- [Workers KV](https://developers.cloudflare.com/kv/) for state
+- [Wrangler](https://developers.cloudflare.com/workers/wrangler/) for local dev and deploys
 - [TypeScript](https://www.typescriptlang.org/)
-- [Telegram Bot API](https://core.telegram.org/bots/api) (via [grammy](https://grammy.dev/))
-- [LiquidJS](https://liquidjs.com/) for template parsing
+- [Telegram Bot API](https://core.telegram.org/bots/api) via [grammY](https://grammy.dev/)
+- [LiquidJS](https://liquidjs.com/) for message templates
 - [Statuspage API](https://developer.statuspage.io/) (optional)
-- GitHub Actions (optional deployment)
 
 ## Getting Started
 
-### Quick Start
-
-1. **Clone the repository**:
-
-   ```shell
-   git clone https://github.com/hobroker/uptime.git
-   cd uptime
-   ```
-
-2. **Run the interactive setup**:
-
-   ```shell
-   npm install
-   npm run setup
-   ```
-
-   This script will help you:
-   - Login to Cloudflare.
-   - Create the required KV namespace and update your configuration.
-   - Set up your Telegram and optional Statuspage secrets.
-   - Prepare your local environment.
-
-3. **Configure your monitors**:
-   Edit `packages/uptime-worker/uptime.config.ts`. Here's a basic example:
-
-   ```typescript
-   export const uptimeWorkerConfig: UptimeWorkerConfig = {
-     checks: [
-       {
-         name: "My Website",
-         target: "https://example.com",
-         retryCount: 2,
-       },
-       {
-         name: "API Health",
-         target: "https://api.example.com/health",
-         method: "GET",
-         expectedCodes: [200],
-       },
-     ],
-   };
-   ```
-
-4. **Deploy**:
-   ```shell
-   npm run deploy
-   ```
-
 ### Prerequisites
 
+- [Node.js](https://nodejs.org/) 20+ and npm.
 - A [Cloudflare](https://www.cloudflare.com/) account.
-- A [Telegram bot](https://core.telegram.org/bots#how-do-i-create-a-bot) and a chat for notifications.
+- A [Telegram bot](https://core.telegram.org/bots#how-do-i-create-a-bot) token and the chat id to notify.
 
-### Manual Setup (Optional)
+### Quick Start
 
-If you prefer to set up everything manually, follow these steps:
+```shell
+# 1. Clone
+git clone https://github.com/hobroker/uptime.git
+cd uptime
 
-1. **KV Namespace**: Create a KV namespace named `uptime` and add its ID to `packages/uptime-worker/wrangler.jsonc`.
-2. **Secrets**: Use `npx wrangler secret put` for `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, and other optional credentials.
-3. **Local Vars**: Copy `packages/uptime-worker/.dev.vars.example` to `packages/uptime-worker/.dev.vars` and fill in the values.
+# 2. Install
+npm install
 
-### Automatic Deployment from GitHub
+# 3. Run the interactive setup
+npm run setup
+```
 
-To enable automatic deployments from GitHub Actions, you'll need to set up a Cloudflare API token:
+The setup wizard (`packages/uptime-setup`) will:
 
-1. Generate a Cloudflare API token by following the instructions at: https://developers.cloudflare.com/fundamentals/api/get-started/create-token/
-2. Add the token as a GitHub repository secret:
-   - Go to your GitHub repository
-   - Navigate to **Settings** > **Secrets and variables** > **Actions**
-   - Click **New repository secret**
-     - Name: `CLOUDFLARE_API_TOKEN`
-     - Value: Your generated Cloudflare API token
-3. The GitHub Actions workflow will automatically deploy your changes when you push to the main branch.
+- Log you in to Cloudflare (via `wrangler login`).
+- Create the `uptime` KV namespace and write its id into `wrangler.jsonc`.
+- Optionally prompt for and set your Telegram / Statuspage secrets.
+- Create a local `.dev.vars` from the example.
 
-### Local Development
+Then configure your monitors in `packages/uptime-worker/uptime.config.ts` (see [Configuration](#configuration)) and deploy:
 
-1. **Install dependencies**:
-   ```shell
-   npm install
-   ```
-2. **Setup environment**:
-   Run the interactive setup to automatically create your `.dev.vars` file and generate types:
-   ```shell
-   npm run setup
-   ```
-3. **Start development server**:
-   ```shell
-   npm run dev
-   ```
-4. **Test the worker locally**:
-   Uptime uses Cloudflare Cron Triggers. You can simulate a cron event locally by calling the `/__scheduled` endpoint:
-   ```shell
-   curl "http://localhost:8787/__scheduled?cron=*+*+*+*+*"
-   ```
+```shell
+npm run deploy
+```
 
-## Usage
+### Manual Setup
 
-Once deployed, Uptime will automatically run on the configured cron schedule, perform the checks in `uptime.config.ts`, and send Telegram notifications based on state changes.
+Prefer to wire things up yourself? The wizard is optional:
+
+1. **KV namespace** — `npx wrangler kv namespace create uptime`, then put the returned id under `kv_namespaces` in `packages/uptime-worker/wrangler.jsonc`.
+2. **Secrets** — set each with `npx wrangler secret put <NAME>` (see [Environment Variables & Secrets](#environment-variables--secrets)).
+3. **Local vars** — copy `packages/uptime-worker/.dev.vars.example` to `.dev.vars` and fill in values for local runs.
+
+## Configuration
+
+### Checks
+
+Monitors are defined in `packages/uptime-worker/uptime.config.ts`:
+
+```typescript
+import { UptimeWorkerConfig } from "./src/types";
+
+// Reusable helper for targets behind Cloudflare Access.
+const zeroTrustAuth = ({ env }: { env: Env }) => ({
+  "CF-Access-Client-Id": env.CF_ACCESS_CLIENT_ID,
+  "CF-Access-Client-Secret": env.CF_ACCESS_CLIENT_SECRET,
+});
+
+export const uptimeWorkerConfig: UptimeWorkerConfig = {
+  // Optional: link included in notifications.
+  statuspageUrl: "https://your-org.statuspage.io",
+  checks: [
+    {
+      name: "My Website",
+      target: "https://example.com",
+      retryCount: 2,
+    },
+    {
+      name: "Internal Service",
+      target: "https://internal.example.com",
+      headers: zeroTrustAuth,
+      retryCount: 1,
+    },
+  ],
+};
+```
+
+Each check supports:
+
+| Field           | Type                       | Default  | Description                                                             |
+| --------------- | -------------------------- | -------- | ----------------------------------------------------------------------- |
+| `name`          | `string`                   | —        | Display name (also the Statuspage component name). **Required.**        |
+| `target`        | `string`                   | —        | URL to probe. **Required.**                                             |
+| `method`        | `string`                   | `"GET"`  | HTTP method.                                                            |
+| `probeTarget`   | `string`                   | `target` | Override the URL actually requested (e.g. a dedicated health endpoint). |
+| `expectedCodes` | `number[]`                 | `[200]`  | Status codes considered healthy.                                        |
+| `timeout`       | `number`                   | `10000`  | Per-attempt timeout in ms.                                              |
+| `retryCount`    | `number`                   | `0`      | Retries before marking down. Backoff is exponential, starting at 5s.    |
+| `headers`       | `({ env }) => HeadersInit` | —        | Function returning request headers (great for auth secrets).            |
+| `body`          | `({ env }) => BodyInit`    | —        | Function returning a request body.                                      |
+
+### Environment Variables & Secrets
+
+Set production values with `npx wrangler secret put <NAME>`; for local development put them in `packages/uptime-worker/.dev.vars` (see `.dev.vars.example`).
+
+| Variable                  | Required | Purpose                                                                                |
+| ------------------------- | -------- | -------------------------------------------------------------------------------------- |
+| `TELEGRAM_BOT_TOKEN`      | ✅       | Telegram bot token used to send/edit messages.                                         |
+| `TELEGRAM_CHAT_ID`        | ✅       | Chat that receives notifications.                                                      |
+| `STATUSPAGE_IO_API_KEY`   | optional | Enables Statuspage sync.                                                               |
+| `STATUSPAGE_IO_PAGE_ID`   | optional | Statuspage page to manage.                                                             |
+| `HEARTBEAT_URL`           | optional | Dead-man's-switch ping URL (see [Self-Monitoring](#self-monitoring-dead-mans-switch)). |
+| `CF_ACCESS_CLIENT_ID`     | optional | Cloudflare Access service token id (used by the `zeroTrustAuth` helper).               |
+| `CF_ACCESS_CLIENT_SECRET` | optional | Cloudflare Access service token secret.                                                |
+
+> [!TIP]
+> The setup wizard prompts for the Telegram and Statuspage secrets. `HEARTBEAT_URL` and the `CF_ACCESS_*` service token are set manually with `wrangler secret put`.
+
+### Cron Schedule
+
+The schedule lives in `packages/uptime-worker/wrangler.jsonc`:
+
+```jsonc
+"triggers": {
+  "crons": ["*/5 * * * *"], // every 5 minutes
+}
+```
+
+## Notifications
+
+**Telegram** — When one or more checks go down, Uptime posts a single message listing them. As the set of failing checks changes, it **edits that same message** rather than spamming new ones. When everything recovers, it replies to the thread with a recovery notice. Message bodies are rendered with LiquidJS and HTML-escaped, so upstream error text can't inject markup.
+
+**Statuspage.io** (optional) — Each check maps to a component whose status is kept in sync (`operational` / `major_outage`). Failing checks are grouped into a single incident that is opened, updated as the affected set changes, and finally **resolved with a postmortem** on recovery.
 
 ### Example Telegram message
 
-<img width="601" alt="image" src="https://github.com/user-attachments/assets/034e1bba-b11d-4046-9866-9a33979bbed7" />
+<img width="605" alt="Example Telegram message" src="https://github.com/user-attachments/assets/5b0d1890-0987-48ea-9ebc-71706b43b475" />
+
+## Self-Monitoring (Dead-Man's-Switch)
+
+A monitor that only speaks up when it runs can fail silently — if the Worker stops being scheduled or crashes before finishing, nothing tells you. To close that gap, set `HEARTBEAT_URL` to a ping URL from an **independent** heartbeat service ([Dead Man's Snitch](https://deadmanssnitch.com/), [healthchecks.io](https://healthchecks.io/), [BetterStack](https://betterstack.com/), [Cronitor](https://cronitor.io/), …).
+
+After each run that completes its check-and-notify cycle, Uptime sends a `GET` to that URL. If the Worker stops firing or the run crashes, the pings stop and the external service alerts you — through a path that doesn't depend on Cloudflare. Note that the heartbeat confirms the monitor _ran_, not that every alert was delivered: a failed Telegram or Statuspage delivery is logged independently and does **not** suppress the ping.
+
+1. Create a check on your provider; pick the coarsest interval that still catches real downtime (the 5-minute cron will ping comfortably within it).
+2. `npx wrangler secret put HEARTBEAT_URL` with the ping URL.
+3. Route that provider's alert wherever you like (e.g. the same Telegram chat).
+
+## Deployment
+
+Deploy manually at any time with:
+
+```shell
+npm run deploy   # turbo -> wrangler deploy
+```
+
+For continuous deployment, connect the repository to **[Cloudflare Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/)** in the Cloudflare dashboard — Cloudflare then builds and deploys on every push to your default branch. (Deployment is handled natively by Cloudflare; there is no GitHub Actions deploy workflow.)
+
+## Local Development
+
+```shell
+# Start the worker locally (with scheduled-handler testing enabled)
+npm run dev
+```
+
+Uptime is driven by a Cron Trigger, so there's no page to visit. Simulate a scheduled run by hitting the `/__scheduled` endpoint Wrangler exposes:
+
+```shell
+curl "http://localhost:8787/__scheduled?cron=*+*+*+*+*"
+```
+
+## Scripts
+
+Run from the repo root; Turborepo fans them out across packages.
+
+| Script               | Description                                            |
+| -------------------- | ------------------------------------------------------ |
+| `npm run setup`      | Interactive Cloudflare + secrets setup wizard.         |
+| `npm run dev`        | Run the worker locally with `--test-scheduled`.        |
+| `npm run deploy`     | Deploy the worker with Wrangler.                       |
+| `npm test`           | Run the Vitest suites.                                 |
+| `npm run lint`       | Lint all packages.                                     |
+| `npm run ts-check`   | Generate Cloudflare types and type-check.              |
+| `npm run format`     | Format with Prettier.                                  |
+| `npm run cf-typegen` | Regenerate Worker binding types from `wrangler.jsonc`. |
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit issues or pull requests.
+Contributions are welcome — issues and pull requests alike. Before opening a PR, please make sure the checks pass:
 
-### Development Workflow
+```shell
+npm run lint
+npm run ts-check
+npm test
+```
 
-1.  **Check types**: `npm run ts-check`
-2.  **Lint**: `npm run lint`
-3.  **Format**: `npm run format`
-4.  **Test**: `npm run test`
-
-Before submitting a PR, please ensure all the above checks pass. We use [Turbo](https://turbo.build/) to manage the monorepo, so these commands will run across all packages.
+CI runs these on every push, so it's the same gate your PR will face.
 
 ## License
 
-This project is licensed under the [MIT License](https://opensource.org/licenses/MIT). See the [LICENSE](LICENSE) file for details.
+Licensed under the [MIT License](https://opensource.org/licenses/MIT). See [LICENSE](LICENSE) for details.
 
 ---
 
