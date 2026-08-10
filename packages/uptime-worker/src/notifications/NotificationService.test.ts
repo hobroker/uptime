@@ -4,11 +4,10 @@ import { NotificationChannel } from "./NotificationChannel";
 
 class FakeChannel extends NotificationChannel {
   constructor(
-    public readonly channelName: string,
+    public readonly name: string,
     private readonly impl: () => Promise<void>,
   ) {
     super({ state: [], env: {} as Env });
-    this.name = channelName;
   }
 
   notify(): Promise<void> {
