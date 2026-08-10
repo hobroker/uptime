@@ -74,12 +74,7 @@ describe("TelegramChannel", () => {
     const lastMessageId = "100";
     await mockKv.put(
       `${UPTIME_KV_KEYS.notificationState}:channel:${ChannelName.Telegram}`,
-      JSON.stringify({ lastMessageId }),
-    );
-    // Setup last failed checks
-    await mockKv.put(
-      `${UPTIME_KV_KEYS.notificationState}:lastFailedChecks`,
-      JSON.stringify(["Check 1"]),
+      JSON.stringify({ lastMessageId, lastFailedChecks: ["Check 1"] }),
     );
 
     // Now Check 1 AND Check 2 are down
@@ -106,12 +101,7 @@ describe("TelegramChannel", () => {
     const lastMessageId = "100";
     await mockKv.put(
       `${UPTIME_KV_KEYS.notificationState}:channel:${ChannelName.Telegram}`,
-      JSON.stringify({ lastMessageId }),
-    );
-    // Setup last failed checks
-    await mockKv.put(
-      `${UPTIME_KV_KEYS.notificationState}:lastFailedChecks`,
-      JSON.stringify(["Check 1"]),
+      JSON.stringify({ lastMessageId, lastFailedChecks: ["Check 1"] }),
     );
 
     // Check 1 is still down

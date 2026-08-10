@@ -1,6 +1,4 @@
-import { CheckResultList } from "../types";
 import { NotificationChannel } from "./NotificationChannel";
-import { NotificationStateStore } from "./NotificationStateStore";
 
 export class NotificationService {
   private channels: NotificationChannel[];
@@ -22,20 +20,5 @@ export class NotificationService {
         );
       }
     }
-  }
-
-  async updateNotificationState({
-    kv,
-    state,
-  }: {
-    kv: KVNamespace;
-    state: CheckResultList;
-  }): Promise<void> {
-    const notificationStateStore = new NotificationStateStore(kv);
-    await notificationStateStore.updateLastFailedChecks(
-      state
-        .filter((check) => check.status === "down")
-        .map((check) => check.name),
-    );
   }
 }
