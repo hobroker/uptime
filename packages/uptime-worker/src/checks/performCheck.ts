@@ -24,8 +24,12 @@ export const performCheck = async (
         signal: AbortSignal.timeout(check.timeout),
       });
 
-      // Cancel response body since we only need status/headers/url
-      response.body?.cancel();
+      // Cancel response body since we only need status/headers/url.
+      // Swallow rejections: an already-disturbed/aborted body can reject on
+      // cancel(), and leaving this promise unhandled surfaces as an
+      // unhandled rejection (invocation outcome "exception") even though the
+      // check itself succeeded.
+      await response.body?.cancel().catch(() => undefined);
 
       const failureReason = getCheckFailureReason(check, response);
 
