@@ -29,15 +29,15 @@ export class TelegramChannel extends NotificationChannel {
       token: this.env.TELEGRAM_BOT_TOKEN,
     });
 
-    const lastNotificationId = await this.getLastNotificationId();
-    const isAnyCheckDown = this.failedChecks.length > 0;
+    const state = await this.getState();
+    const lastNotificationId = state?.lastMessageId || null;
+    const currentFailedChecks = this.failedChecks.map((c) => c.name);
+    const isAnyCheckDown = currentFailedChecks.length > 0;
 
     // Handle case where we already notified about downtime
     if (lastNotificationId) {
       if (isAnyCheckDown) {
-        const lastFailedChecks =
-          await this.notificationStateStore.getLastFailedChecks();
-        const currentFailedChecks = this.failedChecks.map((c) => c.name);
+        const lastFailedChecks = state?.lastFailedChecks ?? [];
         const hasChanged =
           lastFailedChecks.length !== currentFailedChecks.length ||
           !lastFailedChecks.every((name) => currentFailedChecks.includes(name));
@@ -51,6 +51,7 @@ export class TelegramChannel extends NotificationChannel {
             lastNotificationId,
             statuspageUrl: this.statuspageUrl,
           });
+          await this.saveFailedChecks(currentFailedChecks);
           return;
         }
 
@@ -78,29 +79,43 @@ export class TelegramChannel extends NotificationChannel {
 
     await this.sendDowntimeNotification({
       telegramService,
+      failedCheckNames: currentFailedChecks,
       statuspageUrl: this.statuspageUrl,
     });
   }
 
-  private async getLastNotificationId(): Promise<string | null> {
-    const state =
-      await this.notificationStateStore.getChannelState<TelegramNotificationState>(
-        ChannelName.Telegram,
-      );
-    return state?.lastMessageId || null;
-  }
-
-  private async clearLastNotificationId(): Promise<void> {
-    await this.notificationStateStore.updateChannelState<TelegramNotificationState>(
+  private async getState(): Promise<TelegramNotificationState | undefined> {
+    return this.notificationStateStore.getChannelState<TelegramNotificationState>(
       ChannelName.Telegram,
-      (prev) => ({ ...prev, lastMessageId: undefined }),
     );
   }
 
-  private async saveNotificationId(messageId: number): Promise<void> {
+  /** Remove all persisted Telegram state (message id and failed checks). */
+  private async clearState(): Promise<void> {
     await this.notificationStateStore.updateChannelState<TelegramNotificationState>(
       ChannelName.Telegram,
-      (prev) => ({ ...prev, lastMessageId: messageId.toString() }),
+      undefined,
+    );
+  }
+
+  private async saveDowntimeState(
+    messageId: number,
+    failedCheckNames: string[],
+  ): Promise<void> {
+    await this.notificationStateStore.updateChannelState<TelegramNotificationState>(
+      ChannelName.Telegram,
+      (prev) => ({
+        ...prev,
+        lastMessageId: messageId.toString(),
+        lastFailedChecks: failedCheckNames,
+      }),
+    );
+  }
+
+  private async saveFailedChecks(failedCheckNames: string[]): Promise<void> {
+    await this.notificationStateStore.updateChannelState<TelegramNotificationState>(
+      ChannelName.Telegram,
+      (prev) => ({ ...prev, lastFailedChecks: failedCheckNames }),
     );
   }
 
@@ -113,7 +128,7 @@ export class TelegramChannel extends NotificationChannel {
     lastNotificationId: string;
     statuspageUrl?: string;
   }): Promise<void> {
-    await this.clearLastNotificationId();
+    await this.clearState();
 
     console.log("[TelegramChannel] sending recovery message");
 
@@ -160,9 +175,11 @@ export class TelegramChannel extends NotificationChannel {
 
   private async sendDowntimeNotification({
     telegramService,
+    failedCheckNames,
     statuspageUrl,
   }: {
     telegramService: TelegramService;
+    failedCheckNames: string[];
     statuspageUrl?: string;
   }): Promise<void> {
     console.log(`[TelegramChannel] sending downtime message`);
@@ -176,7 +193,7 @@ export class TelegramChannel extends NotificationChannel {
       message: formatted,
     });
 
-    await this.saveNotificationId(message.message_id);
+    await this.saveDowntimeState(message.message_id, failedCheckNames);
     console.log("[TelegramChannel] Sent Telegram notification about downtime");
   }
 

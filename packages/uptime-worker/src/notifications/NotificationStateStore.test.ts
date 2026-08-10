@@ -68,17 +68,6 @@ describe("NotificationStateStore", () => {
     expect(newState).toEqual({ lastMessageId: "new-456" });
   });
 
-  it("should use granular key for last failed checks", async () => {
-    const failedChecks = ["check-1", "check-2"];
-
-    await store.updateLastFailedChecks(failedChecks);
-
-    expect(mockKv.put).toHaveBeenCalledWith(
-      `${UPTIME_KV_KEYS.notificationState}:lastFailedChecks`,
-      JSON.stringify(failedChecks),
-    );
-  });
-
   it("should handle updater function in updateChannelState", async () => {
     const channel = ChannelName.Telegram;
     await store.updateChannelState(channel, { lastMessageId: "1" });
@@ -95,25 +84,6 @@ describe("NotificationStateStore", () => {
       channel,
     );
     expect(state?.lastMessageId).toBe("2");
-  });
-
-  it("should retrieve last failed checks correctly", async () => {
-    const failedChecks = ["check-1", "check-2"];
-
-    // Test empty state
-    expect(await store.getLastFailedChecks()).toEqual([]);
-
-    // Set state
-    await store.updateLastFailedChecks(failedChecks);
-
-    // Test retrieval
-    const retrieved = await store.getLastFailedChecks();
-    expect(retrieved).toEqual(failedChecks);
-
-    // Verify it's reading from the correct key
-    expect(mockKv.get).toHaveBeenCalledWith(
-      `${UPTIME_KV_KEYS.notificationState}:lastFailedChecks`,
-    );
   });
 
   it("should delete channel state when updater returns undefined", async () => {

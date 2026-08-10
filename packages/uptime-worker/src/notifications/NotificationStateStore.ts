@@ -9,10 +9,6 @@ export class NotificationStateStore {
     return `${UPTIME_KV_KEYS.notificationState}:channel:${channel}`;
   }
 
-  private get lastFailedChecksKey(): string {
-    return `${UPTIME_KV_KEYS.notificationState}:lastFailedChecks`;
-  }
-
   async getChannelState<T>(channel: ChannelName): Promise<T | undefined> {
     const key = this.getChannelKey(channel);
     const doc = await this.kv.get(key);
@@ -51,14 +47,5 @@ export class NotificationStateStore {
     } else {
       await this.kv.put(key, JSON.stringify(next));
     }
-  }
-
-  async updateLastFailedChecks(checkIds: string[]): Promise<void> {
-    await this.kv.put(this.lastFailedChecksKey, JSON.stringify(checkIds));
-  }
-
-  async getLastFailedChecks(): Promise<string[]> {
-    const doc = await this.kv.get(this.lastFailedChecksKey);
-    return doc ? JSON.parse(doc) : [];
   }
 }

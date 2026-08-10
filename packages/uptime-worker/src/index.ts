@@ -29,14 +29,9 @@ export default {
           statuspageUrl: uptimeWorkerConfig.statuspageUrl,
         }),
       ]);
-      // Notify all channels (Statuspage, Telegram, etc.)
+      // Notify all channels (Statuspage, Telegram, etc.). Each channel owns
+      // and persists whatever state it needs to dedupe across runs.
       await notificationService.notifyAll();
-
-      // Update the notification state with the latest failed checks
-      await notificationService.updateNotificationState({
-        kv: env.uptime,
-        state,
-      });
 
       // Keep the cron string for debugging; controller.cron is provided by Workers runtime
       console.log(`[scheduled] trigger fired at ${controller.cron}`);
