@@ -47,11 +47,11 @@ It also watches itself: a **dead-man's-switch heartbeat** lets an external monit
 
 ```mermaid
 flowchart LR
-    cron([Cron<br/>every 5 min]) --> checks[Run checks<br/>fetch + retry/backoff]
+    cron([Cron every 5 min]) --> checks[Run checks fetch + retry/backoff]
     checks --> tg[Telegram alert]
     checks --> sp[Statuspage incident]
     tg --> kv[(Workers KV)]
-    checks --> hb([Heartbeat ping<br/>on success])
+    checks --> hb([Heartbeat ping on success])
 ```
 
 1. A scheduled Worker fires on the cron defined in `packages/uptime-worker/wrangler.jsonc` (default: every 5 minutes).
@@ -210,7 +210,8 @@ The schedule lives in `packages/uptime-worker/wrangler.jsonc`:
 
 ### Example Telegram message
 
-<img width="601" alt="Example Telegram downtime notification" src="https://github.com/user-attachments/assets/034e1bba-b11d-4046-9866-9a33979bbed7" />
+<img width="605" alt="Example Telegram message" src="https://github.com/user-attachments/assets/5b0d1890-0987-48ea-9ebc-71706b43b475" />
+
 
 ## Self-Monitoring (Dead-Man's-Switch)
 
