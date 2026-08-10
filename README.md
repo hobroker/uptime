@@ -40,7 +40,7 @@ It also watches itself: a **dead-man's-switch heartbeat** lets an external monit
 - **Smart Telegram alerts** — a single downtime message that edits itself in place as the set of failing checks changes, then gets a recovery reply once everything is back.
 - **Statuspage.io sync (optional)** — maps each check to a component and manages the full incident lifecycle: open → update → resolve → postmortem.
 - **Cloudflare Zero Trust support** — probe sites behind Cloudflare Access using a service token, and treat an Access login page as a failure.
-- **Dead-man's-switch (optional)** — pings an external heartbeat monitor after every successful run, so you're alerted if the monitor itself dies.
+- **Dead-man's-switch (optional)** — pings an external heartbeat monitor after each completed run, so you're alerted if the monitor itself stops running.
 - **Serverless** — runs entirely on Cloudflare Workers + Workers KV. No servers, no containers.
 
 ## How It Works
@@ -60,7 +60,7 @@ flowchart LR
    - **Telegram** opens or edits a downtime message, and replies with a recovery notice when all checks pass again.
    - **Statuspage** (if configured) sets each component's status and opens/updates/resolves a grouped incident.
 4. Each channel persists just the state it needs (e.g. the Telegram message id) in **Workers KV**.
-5. On a fully successful run, an optional **heartbeat** ping is sent to an external dead-man's-switch.
+5. Once the cycle completes, an optional **heartbeat** ping is sent to an external dead-man's-switch.
 
 ## Repository Layout
 
@@ -212,12 +212,11 @@ The schedule lives in `packages/uptime-worker/wrangler.jsonc`:
 
 <img width="605" alt="Example Telegram message" src="https://github.com/user-attachments/assets/5b0d1890-0987-48ea-9ebc-71706b43b475" />
 
-
 ## Self-Monitoring (Dead-Man's-Switch)
 
 A monitor that only speaks up when it runs can fail silently — if the Worker stops being scheduled or crashes before finishing, nothing tells you. To close that gap, set `HEARTBEAT_URL` to a ping URL from an **independent** heartbeat service ([Dead Man's Snitch](https://deadmanssnitch.com/), [healthchecks.io](https://healthchecks.io/), [BetterStack](https://betterstack.com/), [Cronitor](https://cronitor.io/), …).
 
-After every **successful** run, Uptime sends a `GET` to that URL. If a run fails or the Worker stops firing, the pings stop and the external service alerts you — through a path that doesn't depend on Cloudflare.
+After each run that completes its check-and-notify cycle, Uptime sends a `GET` to that URL. If the Worker stops firing or the run crashes, the pings stop and the external service alerts you — through a path that doesn't depend on Cloudflare. Note that the heartbeat confirms the monitor _ran_, not that every alert was delivered: a failed Telegram or Statuspage delivery is logged independently and does **not** suppress the ping.
 
 1. Create a check on your provider; pick the coarsest interval that still catches real downtime (the 5-minute cron will ping comfortably within it).
 2. `npx wrangler secret put HEARTBEAT_URL` with the ping URL.
