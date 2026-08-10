@@ -2,6 +2,10 @@ import { ResolvedCheckConfig, CheckResult } from "../types";
 import { getCheckFailureReason } from "./getCheckFailureReason";
 import { sleep } from "../util/sleep";
 
+// Base delay for the exponential retry backoff. The nth retry waits
+// RETRY_BASE_DELAY_MS * 2^(attempt-1), so the first retry waits 5s.
+const RETRY_BASE_DELAY_MS = 5000;
+
 export const performCheck = async (
   check: ResolvedCheckConfig,
   { env }: { env: Env },
@@ -38,7 +42,7 @@ export const performCheck = async (
       }
 
       if (attempt < maxAttempts) {
-        const delay = Math.pow(2, attempt - 1) * 1000;
+        const delay = Math.pow(2, attempt - 1) * RETRY_BASE_DELAY_MS;
         console.warn(
           `[performCheck] ${check.name} failed (attempt ${attempt}/${maxAttempts}), retrying in ${delay}ms...`,
         );
@@ -52,7 +56,7 @@ export const performCheck = async (
     } catch (error) {
       console.error(`[performCheck] ${check.name} errored with`, error);
       if (attempt < maxAttempts) {
-        const delay = Math.pow(2, attempt - 1) * 1000;
+        const delay = Math.pow(2, attempt - 1) * RETRY_BASE_DELAY_MS;
         console.warn(
           `[performCheck] ${check.name} error (attempt ${attempt}/${maxAttempts}), retrying in ${delay}ms...`,
         );
