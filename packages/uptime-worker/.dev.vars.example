@@ -6,5 +6,11 @@ TELEGRAM_CHAT_ID=
 # STATUSPAGE_IO_API_KEY=
 # STATUSPAGE_IO_PAGE_ID=
 
-# Note: You can add any other secrets here that you might use 
+# Heartbeat / dead-man's-switch (Optional)
+# URL pinged after every successful run. If the worker stops running or fails,
+# pings stop and your heartbeat monitor alerts you that the monitor itself is
+# down. Works with healthchecks.io, BetterStack, cronitor, etc.
+# HEARTBEAT_URL=
+
+# Note: You can add any other secrets here that you might use
 # in your uptime.config.ts (e.g. for custom auth headers)

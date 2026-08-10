@@ -1,4 +1,5 @@
 import { runChecks } from "./checks/runChecks";
+import { pingHeartbeat } from "./heartbeat/pingHeartbeat";
 import { NotificationService } from "./notifications/NotificationService";
 import { StatuspageChannel } from "./notifications/channels/statuspage/StatuspageChannel";
 import { TelegramChannel } from "./notifications/channels/telegram/TelegramChannel";
@@ -35,6 +36,13 @@ export default {
 
       // Keep the cron string for debugging; controller.cron is provided by Workers runtime
       console.log(`[scheduled] trigger fired at ${controller.cron}`);
+
+      // Dead-man's-switch: report a successful cycle to the external heartbeat
+      // monitor. This is intentionally the last step, so it only fires when
+      // checks ran and notifications were attempted. If the worker stops
+      // running or throws before here, the heartbeat stops and the external
+      // monitor alerts that the monitor itself is down.
+      await pingHeartbeat({ env });
     } catch (error) {
       // Cloudflare only records an uncaught exception as the invocation
       // summary (the cron template), hiding the real cause. Log the actual
