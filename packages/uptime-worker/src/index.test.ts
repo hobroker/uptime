@@ -1,11 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const { runChecksMock, notifyAllMock } = vi.hoisted(() => ({
+const { runChecksMock, notifyAllMock, pingHeartbeatMock } = vi.hoisted(() => ({
   runChecksMock: vi.fn(),
   notifyAllMock: vi.fn(),
+  pingHeartbeatMock: vi.fn(),
 }));
 
 vi.mock("./checks/runChecks", () => ({ runChecks: runChecksMock }));
+vi.mock("./heartbeat/pingHeartbeat", () => ({
+  pingHeartbeat: pingHeartbeatMock,
+}));
 vi.mock("./notifications/NotificationService", () => ({
   NotificationService: class {
     notifyAll = notifyAllMock;
@@ -24,10 +28,11 @@ describe("scheduled handler", () => {
   beforeEach(() => {
     runChecksMock.mockReset();
     notifyAllMock.mockReset().mockResolvedValue(undefined);
+    pingHeartbeatMock.mockReset().mockResolvedValue(undefined);
     errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
   });
 
-  it("runs the checks and notifies all channels", async () => {
+  it("runs the checks, notifies all channels, then pings the heartbeat", async () => {
     runChecksMock.mockResolvedValue([
       { name: "api", target: "https://api", status: "up" },
     ]);
@@ -36,10 +41,11 @@ describe("scheduled handler", () => {
 
     expect(runChecksMock).toHaveBeenCalledTimes(1);
     expect(notifyAllMock).toHaveBeenCalledTimes(1);
+    expect(pingHeartbeatMock).toHaveBeenCalledTimes(1);
     expect(errorSpy).not.toHaveBeenCalled();
   });
 
-  it("logs the real error and rethrows when a step fails", async () => {
+  it("logs the real error, rethrows, and skips the heartbeat when a step fails", async () => {
     const boom = new Error("checks blew up");
     runChecksMock.mockRejectedValue(boom);
 
@@ -51,5 +57,7 @@ describe("scheduled handler", () => {
       expect.stringContaining("checks blew up"),
     );
     expect(notifyAllMock).not.toHaveBeenCalled();
+    // Dead-man's-switch: a failed run must NOT ping, so the monitor alerts.
+    expect(pingHeartbeatMock).not.toHaveBeenCalled();
   });
 });

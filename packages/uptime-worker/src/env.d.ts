@@ -10,4 +10,5 @@ interface Env {
   CF_ACCESS_CLIENT_SECRET: string;
   STATUSPAGE_IO_API_KEY: string;
   STATUSPAGE_IO_PAGE_ID: string;
+  HEARTBEAT_URL: string;
 }
