@@ -3,6 +3,7 @@ import {
   CheckState,
   CheckStateMap,
   computeSnapshot,
+  describeTransition,
   isActive,
   nextAlarmDelay,
   transitionCheck,
@@ -107,6 +108,66 @@ describe("isActive", () => {
     expect(isActive({ phase: "down", failures: 1 })).toBe(false);
     expect(isActive({ phase: "up", failures: 0 })).toBe(false);
     expect(isActive(undefined)).toBe(false);
+  });
+});
+
+describe("describeTransition", () => {
+  const check = resolved({ name: "api" }); // threshold 1, recheck 60s
+  const check2 = { ...resolved({ name: "api" }), flapFilter: { failureThreshold: 2, recheckInterval: 60000 } }; // prettier-ignore
+
+  it("up → up says nothing", () => {
+    expect(
+      describeTransition(
+        check,
+        { phase: "up", failures: 0 },
+        {
+          phase: "up",
+          failures: 0,
+        },
+      ),
+    ).toBe(null);
+  });
+
+  it("up → pending explains the pending re-probe", () => {
+    expect(
+      describeTransition(check2, undefined, { phase: "pending", failures: 1 }),
+    ).toBe("api failed (1/2), re-probing in 60s to confirm");
+  });
+
+  it("pending → down reports the confirmed failure", () => {
+    expect(
+      describeTransition(
+        check2,
+        { phase: "pending", failures: 1 },
+        { phase: "down", failures: 2 },
+      ),
+    ).toBe("api failure confirmed (2/2) → down");
+  });
+
+  it("pending → up marks the filtered blip", () => {
+    expect(
+      describeTransition(
+        check2,
+        { phase: "pending", failures: 1 },
+        { phase: "up", failures: 0 },
+      ),
+    ).toBe("api recovered before confirmation — blip filtered, no alert");
+  });
+
+  it("down → up reports recovery", () => {
+    expect(
+      describeTransition(
+        check,
+        { phase: "down", failures: 1 },
+        { phase: "up", failures: 0 },
+      ),
+    ).toBe("api recovered → up");
+  });
+
+  it("up → down (threshold 1) reports down directly", () => {
+    expect(
+      describeTransition(check, undefined, { phase: "down", failures: 1 }),
+    ).toBe("api down");
   });
 });
 

@@ -8,6 +8,7 @@ import { uptimeWorkerConfig } from "../../uptime.config";
 import {
   CheckStateMap,
   computeSnapshot,
+  describeTransition,
   isActive,
   nextAlarmDelay,
   transitionCheck,
@@ -66,18 +67,25 @@ export class Monitor extends DurableObject<Env> {
       { env: this.env },
     );
 
-    const thresholdByName = new Map(
-      checksToProbe.map((check) => [
-        check.name,
-        check.flapFilter.failureThreshold,
-      ]),
+    const checkByName = new Map(
+      checksToProbe.map((check) => [check.name, check]),
     );
     for (const result of results) {
-      states[result.name] = transitionCheck(
-        states[result.name],
+      const check = checkByName.get(result.name);
+      const prev = states[result.name];
+      const next = transitionCheck(
+        prev,
         result,
-        thresholdByName.get(result.name) ?? 1,
+        check?.flapFilter.failureThreshold ?? 1,
       );
+      states[result.name] = next;
+
+      if (check) {
+        const message = describeTransition(check, prev, next);
+        if (message) {
+          console.log(`[Monitor] ${message}`);
+        }
+      }
     }
 
     await this.saveStates(states);

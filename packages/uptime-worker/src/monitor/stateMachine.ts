@@ -64,6 +64,45 @@ export const transitionCheck = (
 };
 
 /**
+ * Human-readable description of a phase change, for logging, or `null` when the
+ * transition isn't worth a line (e.g. a check that was up and stayed up). Lets
+ * the logs show the confirmation outcome — was the re-probe still failing, or
+ * did it clear the blip — not just the initial failing probe.
+ */
+export const describeTransition = (
+  check: ResolvedCheckConfig,
+  prev: CheckState | undefined,
+  next: CheckState,
+): string | null => {
+  const from = prev?.phase ?? "up";
+  const threshold = Math.max(1, check.flapFilter.failureThreshold);
+  const seconds = Math.round(check.flapFilter.recheckInterval / 1000);
+
+  if (next.phase === "up") {
+    if (from === "pending") {
+      return `${check.name} recovered before confirmation — blip filtered, no alert`;
+    }
+    if (from === "down") {
+      return `${check.name} recovered → up`;
+    }
+    return null; // up → up: nothing to say.
+  }
+
+  if (next.phase === "pending") {
+    return `${check.name} failed (${next.failures}/${threshold}), re-probing in ${seconds}s to confirm`;
+  }
+
+  // next.phase === "down"
+  if (from === "pending") {
+    return `${check.name} failure confirmed (${next.failures}/${threshold}) → down`;
+  }
+  if (from === "down") {
+    return `${check.name} still down`;
+  }
+  return `${check.name} down`; // threshold 1: up → down on the first failure.
+};
+
+/**
  * A check is "active" while it still needs the fast confirmation re-probe.
  * Only `pending` qualifies: once a check is confirmed `down` and reported, the
  * alarm loop stops and its recovery is picked up by the next regular cron poke.
