@@ -102,9 +102,9 @@ describe("transitionCheck", () => {
 });
 
 describe("isActive", () => {
-  it("is true for pending and down, false otherwise", () => {
+  it("is true only for pending — down stops the fast re-probe loop", () => {
     expect(isActive({ phase: "pending", failures: 1 })).toBe(true);
-    expect(isActive({ phase: "down", failures: 1 })).toBe(true);
+    expect(isActive({ phase: "down", failures: 1 })).toBe(false);
     expect(isActive({ phase: "up", failures: 0 })).toBe(false);
     expect(isActive(undefined)).toBe(false);
   });
@@ -142,10 +142,18 @@ describe("nextAlarmDelay", () => {
     );
   });
 
-  it("returns the shortest recheckInterval among active checks", () => {
+  it("returns null when the only failing check is already confirmed down", () => {
+    const checks = [resolved({ name: "api" })];
+    expect(
+      nextAlarmDelay(checks, { api: { phase: "down", failures: 1 } }),
+    ).toBe(null);
+  });
+
+  it("returns the shortest recheckInterval among pending checks only", () => {
     const checks = [
-      resolved({ name: "api", recheckInterval: 60000 }),
-      resolved({ name: "web", recheckInterval: 30000 }),
+      // Confirmed down with the shortest interval — must be ignored now.
+      resolved({ name: "api", recheckInterval: 30000 }),
+      resolved({ name: "web", recheckInterval: 60000 }),
       resolved({ name: "cdn", recheckInterval: 90000 }),
     ];
     const states: CheckStateMap = {
@@ -153,6 +161,6 @@ describe("nextAlarmDelay", () => {
       web: { phase: "pending", failures: 1 },
       cdn: { phase: "up", failures: 0 },
     };
-    expect(nextAlarmDelay(checks, states)).toBe(30000);
+    expect(nextAlarmDelay(checks, states)).toBe(60000);
   });
 });

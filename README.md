@@ -53,7 +53,7 @@ flowchart LR
     alarm([DO alarm ~1 min]) --> mon
     mon --> checks[Run checks fetch + retry/backoff]
     checks --> sm{Confirm via state machine}
-    sm -->|still failing| alarm
+    sm -->|pending: re-probe| alarm
     sm --> tg[Telegram alert]
     sm --> sp[Statuspage incident]
     tg --> kv[(Workers KV)]
@@ -62,7 +62,7 @@ flowchart LR
 
 1. A scheduled Worker fires on the cron defined in `packages/uptime-worker/wrangler.jsonc` (default: every 5 minutes) and pokes the single **Monitor Durable Object**.
 2. The Monitor probes each check in `uptime.config.ts` (up to 2 concurrently). A non-expected status code, a Cloudflare Access login page, or a timeout is a failing probe — after exhausting its retries.
-3. Each probe feeds a per-check **confirmation state machine** (`up → pending → down`). A failure is only reported once it reaches the check's `failureThreshold`; while a check is `pending` or `down` the DO sets an **alarm** to re-probe just that check ~1 minute later — confirming the failure (or catching recovery) without waiting a whole cron interval. See [Flap Filtering](#flap-filtering).
+3. Each probe feeds a per-check **confirmation state machine** (`up → pending → down`). A failure is only reported once it reaches the check's `failureThreshold`; while a check is `pending` the DO sets an **alarm** to re-probe just that check ~1 minute later, confirming (or clearing) the failure without waiting a whole cron interval. Once a check is confirmed `down` the alarm loop stops — recovery is detected by the next regular cron poke. See [Flap Filtering](#flap-filtering).
 4. The confirmed snapshot is handed to the notification channels:
    - **Telegram** opens or edits a downtime message, and replies with a recovery notice when all checks pass again.
    - **Statuspage** (if configured) sets each component's status and opens/updates/resolves a grouped incident.
@@ -182,7 +182,7 @@ Each check supports:
 | `retryCount`                  | `number`                                  | `0`      | Retries before marking down. Backoff is exponential, starting at 5s.                              |
 | `flapFilter`                  | `{ failureThreshold?, recheckInterval? }` | —        | Confirm a failure before reporting it (see [Flap Filtering](#flap-filtering)).                    |
 | `flapFilter.failureThreshold` | `number`                                  | `1`      | Consecutive confirmed failures before a check is reported down. `1` reports on the first failure. |
-| `flapFilter.recheckInterval`  | `number`                                  | `60000`  | Milliseconds the Monitor re-probes a pending/down check to confirm the failure or catch recovery. |
+| `flapFilter.recheckInterval`  | `number`                                  | `60000`  | Milliseconds the Monitor waits before re-probing a pending check to confirm or clear the failure. |
 | `headers`                     | `({ env }) => HeadersInit`                | —        | Function returning request headers (great for auth secrets).                                      |
 | `body`                        | `({ env }) => BodyInit`                   | —        | Function returning a request body.                                                                |
 
@@ -237,9 +237,9 @@ up ──probe down──▶ pending ──confirmed (≥ failureThreshold)─�
 
 - **up + failing probe** → `pending` (`failures = 1`). If `failureThreshold == 1` it goes straight to `down` — the original report-on-first-failure behavior.
 - **pending** → the DO sets an alarm and re-probes _only that check_ after `recheckInterval` (~1 min). Another failure increments `failures`; once it reaches `failureThreshold` the check is confirmed **down**. A passing probe clears it back to **up** with no alert — that's the flap being filtered.
-- **down** → the DO keeps a fast alarm loop so recovery is detected within ~1 min instead of at the next cron tick.
+- **down** → the failure has been reported, so the fast alarm loop stops. The check's recovery (and any further status change) is detected by the next regular cron sweep.
 
-Only `pending`/`down` checks incur the fast alarm loop; everything else rides the normal cron cadence. The cron trigger stays as both the normal-cadence sweep and a safety net if an alarm is ever missed.
+Only `pending` checks incur the fast alarm loop; everything else rides the normal cron cadence. The cron trigger stays as both the normal-cadence sweep — including recovery of `down` checks — and a safety net if an alarm is ever missed.
 
 To require confirmation, set `flapFilter.failureThreshold` on a check (`recheckInterval` is optional, default `60000`):
 

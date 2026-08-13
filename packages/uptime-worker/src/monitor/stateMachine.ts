@@ -63,9 +63,13 @@ export const transitionCheck = (
   };
 };
 
-/** A check is "active" while it needs the fast re-probe loop. */
+/**
+ * A check is "active" while it still needs the fast confirmation re-probe.
+ * Only `pending` qualifies: once a check is confirmed `down` and reported, the
+ * alarm loop stops and its recovery is picked up by the next regular cron poke.
+ */
 export const isActive = (state: CheckState | undefined): boolean =>
-  state?.phase === "pending" || state?.phase === "down";
+  state?.phase === "pending";
 
 /**
  * Build the holistic snapshot the notification channels consume. Only checks
@@ -91,9 +95,11 @@ export const computeSnapshot = (
   });
 
 /**
- * Delay (ms) until the DO should next re-probe, or `null` if nothing is active
- * and the alarm loop can stop (the cron poke remains the safety net). While any
- * check is pending/down we re-probe at the shortest configured recheckInterval.
+ * Delay (ms) until the DO should next re-probe, or `null` if nothing is pending
+ * and the alarm loop can stop. Only checks still awaiting confirmation keep the
+ * loop alive; once a check is confirmed down the alarm stops and the regular
+ * cron poke detects its recovery. While any check is pending we re-probe at the
+ * shortest configured recheckInterval.
  */
 export const nextAlarmDelay = (
   checks: ResolvedCheckConfig[],

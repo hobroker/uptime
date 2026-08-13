@@ -24,11 +24,12 @@ export const MONITOR_DO_NAME = "monitor";
  * The Monitor Durable Object owns the flap-filtering state machine and the
  * alarm-driven re-probe loop.
  *
- * - `tick()` is the cron poke: it sweeps every check, so a check that goes down
- *   between fast re-probes is still picked up.
- * - `alarm()` re-probes only the checks that are pending/down, ~recheckInterval
- *   after the previous probe, so a confirmed failure (or a recovery) is
- *   detected within ~1 minute instead of waiting a full cron interval.
+ * - `tick()` is the cron poke: it sweeps every check, picking up new failures
+ *   and detecting recovery of already-down checks at the regular cron cadence.
+ * - `alarm()` re-probes only the checks that are pending, ~recheckInterval after
+ *   the first failure, to confirm or clear an unconfirmed blip. Once a check is
+ *   confirmed down and reported, the alarm loop stops — recovery is left to the
+ *   next cron poke rather than a continuous fast loop.
  *
  * Both paths reconcile the probe results into the confirmation state, compute
  * the holistic snapshot, and drive the existing notification channels — so the
@@ -43,7 +44,7 @@ export class Monitor extends DurableObject<Env> {
     return this.probeAndReconcile(this.checks);
   }
 
-  /** Alarm: re-probe only the checks still awaiting confirmation or recovery. */
+  /** Alarm: re-probe only the checks still awaiting confirmation. */
   async alarm(): Promise<void> {
     const states = await this.loadStates();
     const active = this.checks.filter((check) => isActive(states[check.name]));
