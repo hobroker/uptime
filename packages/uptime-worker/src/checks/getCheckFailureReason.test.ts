@@ -22,6 +22,7 @@ describe("getCheckFailureReason", () => {
     expectedCodes: [200],
     timeout: 1000,
     retryCount: 0,
+    flapFilter: { failureThreshold: 1, recheckInterval: 60000 },
   };
 
   it("returns undefined for expected status codes", () => {

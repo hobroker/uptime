@@ -11,6 +11,20 @@
       "id": "0c6ff2a5b9e6439cb855ea16e08bfd58",
     },
   ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "MONITOR",
+        "class_name": "Monitor",
+      },
+    ],
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["Monitor"],
+    },
+  ],
   "triggers": {
     "crons": ["*/5 * * * *"],
   },

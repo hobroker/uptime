@@ -1,9 +1,7 @@
-import { runChecks } from "./checks/runChecks";
 import { pingHeartbeat } from "./heartbeat/pingHeartbeat";
-import { NotificationService } from "./notifications/NotificationService";
-import { StatuspageChannel } from "./notifications/channels/statuspage/StatuspageChannel";
-import { TelegramChannel } from "./notifications/channels/telegram/TelegramChannel";
-import { uptimeWorkerConfig } from "../uptime.config";
+import { Monitor, MONITOR_DO_NAME } from "./monitor/Monitor";
+
+export { Monitor };
 
 export default {
   async fetch(req: Request) {
@@ -17,22 +15,14 @@ export default {
 
   async scheduled(controller: ScheduledController, env: Env): Promise<void> {
     try {
-      // Get the current state of all checks
-      const state = await runChecks(uptimeWorkerConfig, { env });
+      // Poke the single Monitor Durable Object. It owns the flap-filtering
+      // state machine, runs the checks, drives notifications, and schedules its
+      // own alarm-based re-probes. The cron poke is both the normal-cadence
+      // sweep and a safety net in case an alarm is ever missed.
+      const monitor = env.MONITOR.get(env.MONITOR.idFromName(MONITOR_DO_NAME));
+      const snapshot = await monitor.tick();
 
-      console.log("[scheduled] state", state);
-
-      const notificationService = new NotificationService([
-        new StatuspageChannel({ state, env }),
-        new TelegramChannel({
-          state,
-          env,
-          statuspageUrl: uptimeWorkerConfig.statuspageUrl,
-        }),
-      ]);
-      // Notify all channels (Statuspage, Telegram, etc.). Each channel owns
-      // and persists whatever state it needs to dedupe across runs.
-      await notificationService.notifyAll();
+      console.log("[scheduled] snapshot", snapshot);
 
       // Keep the cron string for debugging; controller.cron is provided by Workers runtime
       console.log(`[scheduled] trigger fired at ${controller.cron}`);

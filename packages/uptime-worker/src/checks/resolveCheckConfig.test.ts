@@ -15,6 +15,10 @@ describe("resolveCheckConfig", () => {
     expect(resolved.expectedCodes).toEqual([200]);
     expect(resolved.timeout).toBe(10000);
     expect(resolved.retryCount).toBe(0);
+    expect(resolved.flapFilter).toEqual({
+      failureThreshold: 1,
+      recheckInterval: 60000,
+    });
   });
 
   it("uses configured overrides", () => {
@@ -26,6 +30,7 @@ describe("resolveCheckConfig", () => {
       expectedCodes: [200, 202],
       timeout: 2500,
       retryCount: 3,
+      flapFilter: { failureThreshold: 2, recheckInterval: 90000 },
     };
 
     const resolved = resolveCheckConfig(input);
@@ -35,6 +40,10 @@ describe("resolveCheckConfig", () => {
     expect(resolved.expectedCodes).toEqual([200, 202]);
     expect(resolved.timeout).toBe(2500);
     expect(resolved.retryCount).toBe(3);
+    expect(resolved.flapFilter).toEqual({
+      failureThreshold: 2,
+      recheckInterval: 90000,
+    });
   });
 
   // Guards the `??` (not `||`) defaulting: an explicitly provided falsy value

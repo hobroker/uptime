@@ -9,7 +9,7 @@
 It also watches itself: a **dead-man's-switch heartbeat** lets an external monitor alert you if the worker ever stops running.
 
 > [!NOTE]
-> There's no server to run and nothing to keep alive — the whole thing is one Cloudflare Worker plus a KV namespace.
+> There's no server to run and nothing to keep alive — the whole thing is one Cloudflare Worker, a KV namespace, and a single Durable Object.
 
 ## Table of Contents
 
@@ -26,6 +26,7 @@ It also watches itself: a **dead-man's-switch heartbeat** lets an external monit
   - [Environment Variables & Secrets](#environment-variables--secrets)
   - [Cron Schedule](#cron-schedule)
 - [Notifications](#notifications)
+- [Flap Filtering](#flap-filtering)
 - [Self-Monitoring (Dead-Man's-Switch)](#self-monitoring-dead-mans-switch)
 - [Deployment](#deployment)
 - [Local Development](#local-development)
@@ -37,6 +38,7 @@ It also watches itself: a **dead-man's-switch heartbeat** lets an external monit
 
 - **Active monitoring** — periodically probes each configured target on a cron schedule.
 - **Resilient checks** — configurable timeout and retries with exponential backoff, so a single transient blip doesn't page you.
+- **Flap filtering** — an optional `flapFilter.failureThreshold` re-probes a failing check ~1 minute later via a Durable Object alarm and only alerts once the failure is _confirmed_, so a sub-minute ingress hiccup that hits every target at once never pages you.
 - **Smart Telegram alerts** — a single downtime message that edits itself in place as the set of failing checks changes, then gets a recovery reply once everything is back.
 - **Statuspage.io sync (optional)** — maps each check to a component and manages the full incident lifecycle: open → update → resolve → postmortem.
 - **Cloudflare Zero Trust support** — probe sites behind Cloudflare Access using a service token, and treat an Access login page as a failure.
@@ -47,20 +49,25 @@ It also watches itself: a **dead-man's-switch heartbeat** lets an external monit
 
 ```mermaid
 flowchart LR
-    cron([Cron every 5 min]) --> checks[Run checks fetch + retry/backoff]
-    checks --> tg[Telegram alert]
-    checks --> sp[Statuspage incident]
+    cron([Cron every 5 min]) --> mon[[Monitor Durable Object]]
+    alarm([DO alarm ~1 min]) --> mon
+    mon --> checks[Run checks fetch + retry/backoff]
+    checks --> sm{Confirm via state machine}
+    sm -->|pending: re-probe| alarm
+    sm --> tg[Telegram alert]
+    sm --> sp[Statuspage incident]
     tg --> kv[(Workers KV)]
-    checks --> hb([Heartbeat ping on success])
+    mon --> hb([Heartbeat ping on success])
 ```
 
-1. A scheduled Worker fires on the cron defined in `packages/uptime-worker/wrangler.jsonc` (default: every 5 minutes).
-2. Each check in `uptime.config.ts` is probed (up to 2 concurrently). A non-expected status code, a Cloudflare Access login page, or a timeout marks it **down** — after exhausting its retries.
-3. Results are handed to the notification channels:
+1. A scheduled Worker fires on the cron defined in `packages/uptime-worker/wrangler.jsonc` (default: every 5 minutes) and pokes the single **Monitor Durable Object**.
+2. The Monitor probes each check in `uptime.config.ts` (up to 2 concurrently). A non-expected status code, a Cloudflare Access login page, or a timeout is a failing probe — after exhausting its retries.
+3. Each probe feeds a per-check **confirmation state machine** (`up → pending → down`). A failure is only reported once it reaches the check's `failureThreshold`; while a check is `pending` the DO sets an **alarm** to re-probe just that check ~1 minute later, confirming (or clearing) the failure without waiting a whole cron interval. Once a check is confirmed `down` the alarm loop stops — recovery is detected by the next regular cron poke. See [Flap Filtering](#flap-filtering).
+4. The confirmed snapshot is handed to the notification channels:
    - **Telegram** opens or edits a downtime message, and replies with a recovery notice when all checks pass again.
    - **Statuspage** (if configured) sets each component's status and opens/updates/resolves a grouped incident.
-4. Each channel persists just the state it needs (e.g. the Telegram message id) in **Workers KV**.
-5. Once the cycle completes, an optional **heartbeat** ping is sent to an external dead-man's-switch.
+5. The DO holds the confirmation state in its own storage; each channel still persists just the state it needs (e.g. the Telegram message id) in **Workers KV**.
+6. Once the cron-driven cycle completes, an optional **heartbeat** ping is sent to an external dead-man's-switch.
 
 ## Repository Layout
 
@@ -77,6 +84,7 @@ This is an [npm workspaces](https://docs.npmjs.com/cli/using-npm/workspaces) + [
 ## Tech Stack
 
 - [Cloudflare Workers](https://developers.cloudflare.com/workers/) + [Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/)
+- [Durable Objects](https://developers.cloudflare.com/durable-objects/) (SQLite-backed) + [Alarms](https://developers.cloudflare.com/durable-objects/api/alarms/) for confirmation scheduling
 - [Workers KV](https://developers.cloudflare.com/kv/) for state
 - [Wrangler](https://developers.cloudflare.com/workers/wrangler/) for local dev and deploys
 - [TypeScript](https://www.typescriptlang.org/)
@@ -163,17 +171,20 @@ export const uptimeWorkerConfig: UptimeWorkerConfig = {
 
 Each check supports:
 
-| Field           | Type                       | Default  | Description                                                             |
-| --------------- | -------------------------- | -------- | ----------------------------------------------------------------------- |
-| `name`          | `string`                   | —        | Display name (also the Statuspage component name). **Required.**        |
-| `target`        | `string`                   | —        | URL to probe. **Required.**                                             |
-| `method`        | `string`                   | `"GET"`  | HTTP method.                                                            |
-| `probeTarget`   | `string`                   | `target` | Override the URL actually requested (e.g. a dedicated health endpoint). |
-| `expectedCodes` | `number[]`                 | `[200]`  | Status codes considered healthy.                                        |
-| `timeout`       | `number`                   | `10000`  | Per-attempt timeout in ms.                                              |
-| `retryCount`    | `number`                   | `0`      | Retries before marking down. Backoff is exponential, starting at 5s.    |
-| `headers`       | `({ env }) => HeadersInit` | —        | Function returning request headers (great for auth secrets).            |
-| `body`          | `({ env }) => BodyInit`    | —        | Function returning a request body.                                      |
+| Field                         | Type                                      | Default  | Description                                                                                       |
+| ----------------------------- | ----------------------------------------- | -------- | ------------------------------------------------------------------------------------------------- |
+| `name`                        | `string`                                  | —        | Display name (also the Statuspage component name). **Required.**                                  |
+| `target`                      | `string`                                  | —        | URL to probe. **Required.**                                                                       |
+| `method`                      | `string`                                  | `"GET"`  | HTTP method.                                                                                      |
+| `probeTarget`                 | `string`                                  | `target` | Override the URL actually requested (e.g. a dedicated health endpoint).                           |
+| `expectedCodes`               | `number[]`                                | `[200]`  | Status codes considered healthy.                                                                  |
+| `timeout`                     | `number`                                  | `10000`  | Per-attempt timeout in ms.                                                                        |
+| `retryCount`                  | `number`                                  | `0`      | Retries before marking down. Backoff is exponential, starting at 5s.                              |
+| `flapFilter`                  | `{ failureThreshold?, recheckInterval? }` | —        | Confirm a failure before reporting it (see [Flap Filtering](#flap-filtering)).                    |
+| `flapFilter.failureThreshold` | `number`                                  | `1`      | Consecutive confirmed failures before a check is reported down. `1` reports on the first failure. |
+| `flapFilter.recheckInterval`  | `number`                                  | `60000`  | Milliseconds the Monitor waits before re-probing a pending check to confirm or clear the failure. |
+| `headers`                     | `({ env }) => HeadersInit`                | —        | Function returning request headers (great for auth secrets).                                      |
+| `body`                        | `({ env }) => BodyInit`                   | —        | Function returning a request body.                                                                |
 
 ### Environment Variables & Secrets
 
@@ -211,6 +222,37 @@ The schedule lives in `packages/uptime-worker/wrangler.jsonc`:
 ### Example Telegram message
 
 <img width="605" alt="Example Telegram message" src="https://github.com/user-attachments/assets/5b0d1890-0987-48ea-9ebc-71706b43b475" />
+
+## Flap Filtering
+
+Occasionally the shared ingress path in front of every target blips for under a minute — a Cloudflare Tunnel reconnect or a WAN hiccup — and a single cron run sees _every_ check fail at once, even though the services are fine. Without protection that fires a full downtime alert and a Statuspage incident that resolves minutes later.
+
+Flap filtering confirms a failure before reporting it. A single **Monitor Durable Object** owns a per-check state machine:
+
+```
+up ──probe down──▶ pending ──confirmed (≥ failureThreshold)──▶ down
+ ▲                    │                                          │
+ └──probe up──────────┘◀────────── probe up (recovery) ──────────┘
+```
+
+- **up + failing probe** → `pending` (`failures = 1`). If `failureThreshold == 1` it goes straight to `down` — the original report-on-first-failure behavior.
+- **pending** → the DO sets a single alarm and re-probes just the pending checks (not the full set) after `recheckInterval` (~1 min). Another failure increments `failures`; once it reaches `failureThreshold` the check is confirmed **down**. A passing probe clears it back to **up** with no alert — that's the flap being filtered. (One DO holds one alarm; if several checks are pending it fires at the shortest `recheckInterval` and re-probes them together.)
+- **down** → the failure has been reported, so the fast alarm loop stops. The check's recovery (and any further status change) is detected by the next regular cron sweep.
+
+Only `pending` checks incur the fast alarm loop; everything else rides the normal cron cadence. The cron trigger stays as both the normal-cadence sweep — including recovery of `down` checks — and a safety net if an alarm is ever missed.
+
+To require confirmation, set `flapFilter.failureThreshold` on a check (`recheckInterval` is optional, default `60000`):
+
+```typescript
+{
+  name: "My Website",
+  target: "https://example.com",
+  // must fail twice, ~1 min apart, before alerting
+  flapFilter: { failureThreshold: 2 },
+}
+```
+
+`flapFilter.failureThreshold` defaults to `1`, so existing configs behave exactly as before. This is deliberately distinct from `retryCount`, which retries _within a single run_ (seconds); flap filtering re-checks _across real time_ (~1 min per confirmation) to ride out a short outage that spans a run but recovers shortly after.
 
 ## Self-Monitoring (Dead-Man's-Switch)
 
