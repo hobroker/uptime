@@ -25,6 +25,7 @@ describe("performCheck", () => {
     expectedCodes: [200],
     timeout: 1000,
     retryCount: 0,
+    flapFilter: { failureThreshold: 1, recheckInterval: 60000 },
   };
 
   const env = {} as Env;
