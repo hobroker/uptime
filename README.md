@@ -236,7 +236,7 @@ up ──probe down──▶ pending ──confirmed (≥ failureThreshold)─�
 ```
 
 - **up + failing probe** → `pending` (`failures = 1`). If `failureThreshold == 1` it goes straight to `down` — the original report-on-first-failure behavior.
-- **pending** → the DO sets an alarm and re-probes _only that check_ after `recheckInterval` (~1 min). Another failure increments `failures`; once it reaches `failureThreshold` the check is confirmed **down**. A passing probe clears it back to **up** with no alert — that's the flap being filtered.
+- **pending** → the DO sets a single alarm and re-probes just the pending checks (not the full set) after `recheckInterval` (~1 min). Another failure increments `failures`; once it reaches `failureThreshold` the check is confirmed **down**. A passing probe clears it back to **up** with no alert — that's the flap being filtered. (One DO holds one alarm; if several checks are pending it fires at the shortest `recheckInterval` and re-probes them together.)
 - **down** → the failure has been reported, so the fast alarm loop stops. The check's recovery (and any further status change) is detected by the next regular cron sweep.
 
 Only `pending` checks incur the fast alarm loop; everything else rides the normal cron cadence. The cron trigger stays as both the normal-cadence sweep — including recovery of `down` checks — and a safety net if an alarm is ever missed.

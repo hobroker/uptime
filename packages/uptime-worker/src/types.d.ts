@@ -19,7 +19,9 @@ export interface FlapFilterConfig {
   // and only alerts once the failure is confirmed.
   failureThreshold?: number; // default 1
   // Milliseconds the Monitor DO waits before re-probing a check that is
-  // pending confirmation or down (for fast recovery detection). Default 60000.
+  // pending confirmation, to confirm or clear the failure. Once a check is
+  // confirmed down the re-probe loop stops (recovery rides the cron). Default
+  // 60000.
   recheckInterval?: number; // default 60000
 }
 

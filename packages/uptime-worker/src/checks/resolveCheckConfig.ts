@@ -6,8 +6,8 @@ export const CHECK_DEFAULTS = {
   expectedCodes: [200],
   timeout: 10000,
   retryCount: 0,
-  // Flap filtering: report on the first failure and re-probe pending/down
-  // checks once a minute (see FlapFilterConfig).
+  // Flap filtering: report on the first failure and re-probe a pending
+  // check once a minute to confirm it (see FlapFilterConfig).
   failureThreshold: 1,
   recheckInterval: 60000,
 } as const;
