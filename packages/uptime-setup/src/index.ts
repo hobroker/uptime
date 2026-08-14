@@ -88,7 +88,7 @@ export async function main() {
     defaultValue: currentProjectName,
     initialValue: currentProjectName,
     validate: (value) => {
-      if (value.length === 0) return "Project name is required";
+      if (!value || value.length === 0) return "Project name is required";
       if (!/^[a-z0-9-]+$/.test(value))
         return "Project name must be lowercase, numbers, and hyphens only";
     },
