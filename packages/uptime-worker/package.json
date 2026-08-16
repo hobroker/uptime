@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.mts",
     "deploy": "wrangler deploy",
     "dev": "wrangler dev --test-scheduled",
     "cf-typegen": "wrangler types",
@@ -13,6 +14,7 @@
     "ts-check": "wrangler types && tsc --noEmit"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.21.3",
     "@cloudflare/workers-types": "^5.20260814.1",
     "@hobroker/uptime-eslint": "*",
     "@hobroker/uptime-test": "*",
