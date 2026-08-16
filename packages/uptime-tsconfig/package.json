@@ -3,6 +3,6 @@
   "version": "1.0.0",
   "private": true,
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260214.0"
+    "@cloudflare/workers-types": "^5.20260814.1"
   }
 }
