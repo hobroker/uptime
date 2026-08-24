@@ -4,5 +4,6 @@
     "lib": ["ESNext", "WebWorker"],
     "types": ["@cloudflare/workers-types", "vitest/globals"]
   },
-  "include": ["src", "uptime.config.ts", "worker-configuration.d.ts"]
+  "include": ["src", "uptime.config.ts", "worker-configuration.d.ts"],
+  "exclude": ["src/**/*.integration.test.ts"]
 }

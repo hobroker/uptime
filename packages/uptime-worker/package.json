@@ -11,7 +11,7 @@
     "format": "prettier --write \"**/*.{ts,mjs,json}\"",
     "lint": "eslint \"**/*.{ts,mjs,json}\"",
     "lint:fix": "npm run lint -- --fix",
-    "ts-check": "wrangler types && tsc --noEmit"
+    "ts-check": "wrangler types && tsc --noEmit && tsc --noEmit -p tsconfig.integration.json"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.21.3",
