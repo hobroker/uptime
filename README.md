@@ -40,7 +40,7 @@ It also watches itself: a **dead-man's-switch heartbeat** lets an external monit
 - **Resilient checks** — configurable timeout and retries with exponential backoff, so a single transient blip doesn't page you.
 - **Flap filtering** — an optional `flapFilter.failureThreshold` re-probes a failing check ~1 minute later via a Durable Object alarm and only alerts once the failure is _confirmed_, so a sub-minute ingress hiccup that hits every target at once never pages you.
 - **Smart Telegram alerts** — a single downtime message that edits itself in place as the set of failing checks changes, then gets a recovery reply once everything is back.
-- **Statuspage.io sync (optional)** — maps each check to a component and manages the full incident lifecycle: open → update → resolve → postmortem.
+- **Statuspage.io sync (optional)** — maps each check to a component and manages the incident lifecycle: open → update → resolve, with an optional postmortem on recovery.
 - **Cloudflare Zero Trust support** — probe sites behind Cloudflare Access using a service token, and treat an Access login page as a failure.
 - **Dead-man's-switch (optional)** — pings an external heartbeat monitor after each completed run, so you're alerted if the monitor itself stops running.
 - **Serverless** — runs entirely on Cloudflare Workers + Workers KV. No servers, no containers.
@@ -151,8 +151,12 @@ const zeroTrustAuth = ({ env }: { env: Env }) => ({
 });
 
 export const uptimeWorkerConfig: UptimeWorkerConfig = {
-  // Optional: link included in notifications.
-  statuspageUrl: "https://your-org.statuspage.io",
+  statuspage: {
+    // Optional: link included in notifications.
+    url: "https://your-org.statuspage.io",
+    // Optional: create and publish a postmortem when an incident resolves.
+    autoPostmortem: false,
+  },
   checks: [
     {
       name: "My Website",
@@ -168,6 +172,13 @@ export const uptimeWorkerConfig: UptimeWorkerConfig = {
   ],
 };
 ```
+
+Optional `statuspage` settings:
+
+| Field                       | Type      | Default | Description                                                                     |
+| --------------------------- | --------- | ------- | ------------------------------------------------------------------------------- |
+| `statuspage.url`            | `string`  | —       | Public status page URL included in Telegram notifications.                      |
+| `statuspage.autoPostmortem` | `boolean` | `false` | Create and publish a postmortem when a Statuspage incident is resolved. Opt-in. |
 
 Each check supports:
 
@@ -217,7 +228,7 @@ The schedule lives in `packages/uptime-worker/wrangler.jsonc`:
 
 **Telegram** — When one or more checks go down, Uptime posts a single message listing them. As the set of failing checks changes, it **edits that same message** rather than spamming new ones. When everything recovers, it replies to the thread with a recovery notice. Message bodies are rendered with LiquidJS and HTML-escaped, so upstream error text can't inject markup.
 
-**Statuspage.io** (optional) — Each check maps to a component whose status is kept in sync (`operational` / `major_outage`). Failing checks are grouped into a single incident that is opened, updated as the affected set changes, and finally **resolved with a postmortem** on recovery.
+**Statuspage.io** (optional) — Each check maps to a component whose status is kept in sync (`operational` / `major_outage`). Failing checks are grouped into a single incident that is opened, updated as the affected set changes, and resolved on recovery. Set `statuspage.autoPostmortem: true` to also create and publish a postmortem.
 
 ### Example Telegram message
 

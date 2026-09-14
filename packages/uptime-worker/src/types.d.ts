@@ -52,7 +52,12 @@ export interface ResolvedCheckConfig extends CheckConfig {
   flapFilter: ResolvedFlapFilterConfig;
 }
 
+export interface StatuspageSettings {
+  url?: string;
+  autoPostmortem?: boolean;
+}
+
 export interface UptimeWorkerConfig {
   checks: CheckConfig[];
-  statuspageUrl?: string;
+  statuspage?: StatuspageSettings;
 }

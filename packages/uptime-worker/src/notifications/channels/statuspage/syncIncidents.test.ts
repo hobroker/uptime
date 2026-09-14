@@ -255,7 +255,12 @@ describe("syncIncidents", () => {
       },
     ]);
     const service = new StatuspageIncidentService({ apiKey: "", pageId: "" });
-    await syncIncidents({ state, byName, incidentService: service });
+    await syncIncidents({
+      state,
+      byName,
+      incidentService: service,
+      autoPostmortem: true,
+    });
 
     expect(mockGetIncident).toHaveBeenCalledWith("inc-existing");
     expect(mockUpdateIncident).toHaveBeenCalledWith("inc-existing", {
@@ -266,6 +271,41 @@ describe("syncIncidents", () => {
       body: "## Issue\nThe following services are currently down:\n🔴 api — HTTP 500 Internal Server Error\n## Resolution\nAll services are back up and running and the incident has been resolved.",
     });
     expect(mockPublishPostmortem).toHaveBeenCalledWith("inc-existing");
+  });
+
+  it("should resolve the incident without creating a postmortem by default", async () => {
+    const state: CheckResultList = [
+      {
+        name: "api",
+        target: "https://api.example.com",
+        status: "up",
+      },
+      {
+        name: "web",
+        target: "https://web.example.com",
+        status: "up",
+      },
+    ];
+
+    mockListUnresolvedIncidents.mockResolvedValue([
+      {
+        id: "inc-existing",
+        name: "⚠️ 1 check is down",
+        status: "investigating",
+        incident_updates: [],
+        components: [{ id: "comp-1", name: "api", status: "operational" }],
+      },
+    ]);
+    const service = new StatuspageIncidentService({ apiKey: "", pageId: "" });
+    await syncIncidents({ state, byName, incidentService: service });
+
+    expect(mockUpdateIncident).toHaveBeenCalledWith("inc-existing", {
+      status: "resolved",
+      body: "All services have recovered.",
+    });
+    expect(mockGetIncident).not.toHaveBeenCalled();
+    expect(mockCreatePostmortem).not.toHaveBeenCalled();
+    expect(mockPublishPostmortem).not.toHaveBeenCalled();
   });
 
   it("should do nothing when all monitors are up and no active incident", async () => {
