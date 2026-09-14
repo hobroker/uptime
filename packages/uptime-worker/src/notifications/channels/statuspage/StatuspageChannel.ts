@@ -5,11 +5,22 @@ import {
 import { syncComponents } from "./syncComponents";
 import { syncIncidents } from "./syncIncidents";
 import { NotificationChannel } from "../../NotificationChannel";
+import { NotificationContext } from "../../types";
 
 import { ChannelName } from "../../constants";
 
+interface StatuspageNotificationContext extends NotificationContext {
+  autoPostmortem?: boolean;
+}
+
 export class StatuspageChannel extends NotificationChannel {
   name = ChannelName.Statuspage;
+  private autoPostmortem?: boolean;
+
+  constructor({ state, env, autoPostmortem }: StatuspageNotificationContext) {
+    super({ state, env });
+    this.autoPostmortem = autoPostmortem;
+  }
 
   async notify(): Promise<void> {
     if (!this.env.STATUSPAGE_IO_API_KEY || !this.env.STATUSPAGE_IO_PAGE_ID) {
@@ -33,6 +44,7 @@ export class StatuspageChannel extends NotificationChannel {
       state: this.state,
       byName,
       incidentService: new StatuspageIncidentService(config),
+      autoPostmortem: this.autoPostmortem,
     });
   }
 }

@@ -72,6 +72,24 @@ describe("StatuspageChannel", () => {
       state,
       byName,
       incidentService: expect.anything(),
+      autoPostmortem: undefined,
+    });
+  });
+
+  it("should pass autoPostmortem through to syncIncidents", async () => {
+    const env = createEnv();
+    const channel = new StatuspageChannel({
+      state,
+      env,
+      autoPostmortem: true,
+    });
+    await channel.notify();
+
+    expect(mockSyncIncidents).toHaveBeenCalledWith({
+      state,
+      byName: expect.any(Map),
+      incidentService: expect.anything(),
+      autoPostmortem: true,
     });
   });
 });

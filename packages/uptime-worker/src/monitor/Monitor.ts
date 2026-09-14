@@ -99,11 +99,15 @@ export class Monitor extends DurableObject<Env> {
 
   private async notify(snapshot: CheckResultList): Promise<void> {
     const notificationService = new NotificationService([
-      new StatuspageChannel({ state: snapshot, env: this.env }),
+      new StatuspageChannel({
+        state: snapshot,
+        env: this.env,
+        autoPostmortem: uptimeWorkerConfig.statuspage?.autoPostmortem,
+      }),
       new TelegramChannel({
         state: snapshot,
         env: this.env,
-        statuspageUrl: uptimeWorkerConfig.statuspageUrl,
+        statuspageUrl: uptimeWorkerConfig.statuspage?.url,
       }),
     ]);
     await notificationService.notifyAll();

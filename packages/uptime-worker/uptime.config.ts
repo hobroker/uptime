@@ -13,8 +13,10 @@ const zeroTrustAuth = ({ env }: { env: Env }) => ({
  * 2. '.dev.vars' file for local development
  */
 export const uptimeWorkerConfig: UptimeWorkerConfig = {
-  // Optional: Your Statuspage.io URL
-  statuspageUrl: "https://hobroker.statuspage.io",
+  statuspage: {
+    // Optional: public URL included in Telegram notifications.
+    url: "https://hobroker.statuspage.io",
+  },
   checks: [
     {
       name: "Sonarr",

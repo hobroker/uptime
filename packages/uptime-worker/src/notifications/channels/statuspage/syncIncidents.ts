@@ -76,26 +76,32 @@ const updateIncident = async ({
   });
 };
 
-/** Resolve the incident, create & publish a postmortem, then clean up KV. */
+/** Resolve the incident, optionally create & publish a postmortem. */
 const resolveIncident = async ({
   incidentId,
   incidentService,
+  autoPostmortem,
 }: {
   incidentId: string;
   incidentService: StatuspageIncidentService;
+  autoPostmortem?: boolean;
 }): Promise<void> => {
+  console.log("[Statuspage] resolving incident, all checks are up");
+  await incidentService.updateIncident(incidentId, {
+    status: "resolved",
+    body: statuspageRecoveryTemplate(),
+  });
+
+  if (!autoPostmortem) {
+    return;
+  }
+
   const incident = await incidentService.getIncident(incidentId);
   const latestUpdate = incident.incident_updates.find(
     (u) => u.status !== "resolved" && u.status !== "postmortem",
   );
   const incidentDetails =
     latestUpdate?.body || "One or more services experienced a disruption.";
-
-  console.log("[Statuspage] resolving incident, all checks are up");
-  await incidentService.updateIncident(incidentId, {
-    status: "resolved",
-    body: statuspageRecoveryTemplate(),
-  });
 
   const postmortemBody = statuspagePostmortemTemplate({ incidentDetails });
 
@@ -136,10 +142,12 @@ export const syncIncidents = async ({
   state,
   byName,
   incidentService,
+  autoPostmortem,
 }: {
   state: CheckResultList;
   byName: Map<string, StatuspageComponent>;
   incidentService: StatuspageIncidentService;
+  autoPostmortem?: boolean;
 }): Promise<void> => {
   const failedChecks = state.filter((c) => c.status === "down");
   const activeIncident = await getLastUnresolvedIncident(incidentService);
@@ -167,6 +175,7 @@ export const syncIncidents = async ({
     await resolveIncident({
       incidentId: activeIncidentId,
       incidentService,
+      autoPostmortem,
     });
   }
 };
