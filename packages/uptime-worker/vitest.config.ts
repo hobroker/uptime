@@ -1,7 +1,8 @@
-import { defineVitestConfig } from "@hobroker/uptime-test";
+import { defineConfig } from "vitest/config";
 
-export default defineVitestConfig({
+export default defineConfig({
   test: {
+    globals: true,
     setupFiles: ["./src/testSetup.ts"],
   },
 });
