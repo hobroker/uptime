@@ -7,11 +7,7 @@ export interface StatuspageComponent {
 }
 
 export type StatuspageIncidentStatus =
-  | "investigating"
-  | "identified"
-  | "monitoring"
-  | "resolved"
-  | "postmortem";
+  "investigating" | "identified" | "monitoring" | "resolved" | "postmortem";
 
 export interface StatuspageIncidentUpdate {
   id: string;
@@ -25,6 +21,9 @@ export interface StatuspageIncident {
   status: StatuspageIncidentStatus;
   incident_updates: StatuspageIncidentUpdate[];
   components: StatuspageComponent[];
+  created_at?: string;
+  started_at?: string | null;
+  resolved_at?: string | null;
 }
 
 export interface StatuspageConfig {

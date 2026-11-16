@@ -236,6 +236,8 @@ describe("syncIncidents", () => {
 
     mockGetIncident.mockResolvedValue({
       id: "inc-existing",
+      started_at: "2026-01-01T10:00:00.000Z",
+      resolved_at: "2026-01-01T11:25:00.000Z",
       incident_updates: [
         {
           id: "upd-2",
@@ -268,7 +270,7 @@ describe("syncIncidents", () => {
       body: "All services have recovered.",
     });
     expect(mockCreatePostmortem).toHaveBeenCalledWith("inc-existing", {
-      body: "## Issue\nThe following services are currently down:\n🔴 api — HTTP 500 Internal Server Error\n## Resolution\nAll services are back up and running and the incident has been resolved.",
+      body: "## Issue\nThe following services are currently down:\n🔴 api — HTTP 500 Internal Server Error\n## Duration\nThe incident lasted 1 hour 25 minutes.\n## Resolution\nAll services are back up and running and the incident has been resolved.",
     });
     expect(mockPublishPostmortem).toHaveBeenCalledWith("inc-existing");
   });
