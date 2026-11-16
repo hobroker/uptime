@@ -73,13 +73,9 @@ flowchart LR
 
 This is an [npm workspaces](https://docs.npmjs.com/cli/using-npm/workspaces) + [Turborepo](https://turbo.build/) monorepo:
 
-| Package                    | Description                                                               |
-| -------------------------- | ------------------------------------------------------------------------- |
-| `packages/uptime-worker`   | The Cloudflare Worker: checks, notifications, and scheduling.             |
-| `packages/uptime-setup`    | Interactive CLI (`npm run setup`) that provisions Cloudflare and secrets. |
-| `packages/uptime-eslint`   | Shared ESLint config.                                                     |
-| `packages/uptime-test`     | Shared Vitest config.                                                     |
-| `packages/uptime-tsconfig` | Shared TypeScript config.                                                 |
+| Package                  | Description                                                                                                                  |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| `packages/uptime-worker` | The Cloudflare Worker: checks, notifications, and scheduling. Holds its own ESLint, Prettier, Vitest and TypeScript configs. |
 
 ## Tech Stack
 
@@ -110,26 +106,17 @@ cd uptime
 # 2. Install
 npm install
 
-# 3. Run the interactive setup
-npm run setup
+# 3. Log in to Cloudflare
+npx wrangler login
 ```
 
-The setup wizard (`packages/uptime-setup`) will:
-
-- Log you in to Cloudflare (via `wrangler login`).
-- Create the `uptime` KV namespace and write its id into `wrangler.jsonc`.
-- Optionally prompt for and set your Telegram / Statuspage secrets.
-- Create a local `.dev.vars` from the example.
-
-Then configure your monitors in `packages/uptime-worker/uptime.config.ts` (see [Configuration](#configuration)) and deploy:
+Then follow the [setup steps](#setup) below, configure your monitors in `packages/uptime-worker/uptime.config.ts` (see [Configuration](#configuration)) and deploy:
 
 ```shell
 npm run deploy
 ```
 
-### Manual Setup
-
-Prefer to wire things up yourself? The wizard is optional:
+### Setup
 
 1. **KV namespace** — `npx wrangler kv namespace create uptime`, then put the returned id under `kv_namespaces` in `packages/uptime-worker/wrangler.jsonc`.
 2. **Secrets** — set each with `npx wrangler secret put <NAME>` (see [Environment Variables & Secrets](#environment-variables--secrets)).
@@ -212,7 +199,7 @@ Set production values with `npx wrangler secret put <NAME>`; for local developme
 | `CF_ACCESS_CLIENT_SECRET` | optional | Cloudflare Access service token secret.                                                |
 
 > [!TIP]
-> The setup wizard prompts for the Telegram and Statuspage secrets. `HEARTBEAT_URL` and the `CF_ACCESS_*` service token are set manually with `wrangler secret put`.
+> Set each secret with `npx wrangler secret put <NAME>`.
 
 ### Cron Schedule
 
@@ -304,7 +291,6 @@ Run from the repo root; Turborepo fans them out across packages.
 
 | Script               | Description                                            |
 | -------------------- | ------------------------------------------------------ |
-| `npm run setup`      | Interactive Cloudflare + secrets setup wizard.         |
 | `npm run dev`        | Run the worker locally with `--test-scheduled`.        |
 | `npm run deploy`     | Deploy the worker with Wrangler.                       |
 | `npm test`           | Run the Vitest suites.                                 |
