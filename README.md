@@ -110,11 +110,19 @@ npm install
 npx wrangler login
 ```
 
-Then follow the [setup steps](#setup) below, configure your monitors in `packages/uptime-worker/uptime.config.ts` (see [Configuration](#configuration)) and deploy:
+Then follow the [setup steps](#setup) below (or let a coding agent do it for you — see [Setup with a coding agent](#setup-with-a-coding-agent)), configure your monitors in `packages/uptime-worker/uptime.config.ts` (see [Configuration](#configuration)) and deploy:
 
 ```shell
 npm run deploy
 ```
+
+### Setup with a coding agent
+
+[`SETUP.md`](SETUP.md) has step-by-step instructions written for local coding agents (Claude Code, Codex, Cursor, etc.). Open the repo in your agent and ask:
+
+> Set up this repo by following SETUP.md.
+
+It walks you through the Cloudflare login, KV namespace, secrets, `.dev.vars`, your checks, and deployment. Secrets are always entered by you in your own terminal, never in chat.
 
 ### Setup
 
