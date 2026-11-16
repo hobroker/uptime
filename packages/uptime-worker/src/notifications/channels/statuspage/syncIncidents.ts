@@ -119,8 +119,14 @@ const resolveIncident = async ({
   const latestUpdate = incident.incident_updates.find(
     (u) => u.status !== "resolved" && u.status !== "postmortem",
   );
-  const incidentDetails =
-    latestUpdate?.body || "One or more services experienced a disruption.";
+  // The postmortem is written after resolution, so switch the downtime
+  // update's wording to past tense.
+  const incidentDetails = latestUpdate?.body
+    ? latestUpdate.body.replace(
+        "The following services are currently down:",
+        "The following services were down:",
+      )
+    : "One or more services experienced a disruption.";
 
   const postmortemBody = statuspagePostmortemTemplate({
     incidentDetails,
