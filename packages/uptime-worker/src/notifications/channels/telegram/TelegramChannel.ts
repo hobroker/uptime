@@ -8,6 +8,7 @@ import {
 import { NotificationContext } from "../../types";
 import { NotificationStateStore } from "../../NotificationStateStore";
 import { TelegramNotificationState } from "./types";
+import { formatDuration } from "../../../util/formatDuration";
 
 interface TelegramNotificationContext extends NotificationContext {
   statuspageUrl?: string;
@@ -65,6 +66,7 @@ export class TelegramChannel extends NotificationChannel {
         telegramService,
         lastNotificationId,
         statuspageUrl: this.statuspageUrl,
+        downSince: state?.downSince,
       });
       return;
     }
@@ -108,6 +110,7 @@ export class TelegramChannel extends NotificationChannel {
         ...prev,
         lastMessageId: messageId.toString(),
         lastFailedChecks: failedCheckNames,
+        downSince: new Date().toISOString(),
       }),
     );
   }
@@ -123,18 +126,26 @@ export class TelegramChannel extends NotificationChannel {
     telegramService,
     lastNotificationId,
     statuspageUrl,
+    downSince,
   }: {
     telegramService: TelegramService;
     lastNotificationId: string;
     statuspageUrl?: string;
+    downSince?: string;
   }): Promise<void> {
     await this.clearState();
 
     console.log("[TelegramChannel] sending recovery message");
 
+    // State saved before downSince existed has no start time: omit the duration.
+    const downSinceMs = downSince ? Date.parse(downSince) : NaN;
+    const duration = Number.isNaN(downSinceMs)
+      ? undefined
+      : formatDuration(Date.now() - downSinceMs);
+
     await telegramService.sendMessage({
       chatId: this.env.TELEGRAM_CHAT_ID,
-      message: telegramRecoveryTemplate({ statuspageUrl }),
+      message: telegramRecoveryTemplate({ statuspageUrl, duration }),
       options: {
         reply_parameters: {
           message_id: parseInt(lastNotificationId, 10),

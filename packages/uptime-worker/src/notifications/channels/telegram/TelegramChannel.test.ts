@@ -139,4 +139,65 @@ describe("TelegramChannel", () => {
       }),
     );
   });
+
+  it("should save the downtime start time on initial failure", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T10:00:00.000Z"));
+
+    const channel = createChannel([
+      { name: "Check 1", target: "http://1", status: "down" },
+    ]);
+    await channel.notify();
+
+    expect(mockKv.put).toHaveBeenCalledWith(
+      expect.stringContaining(`:channel:${ChannelName.Telegram}`),
+      expect.stringContaining('"downSince":"2026-01-01T10:00:00.000Z"'),
+    );
+    vi.useRealTimers();
+  });
+
+  it("should include the incident duration in the recovery message", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T11:25:00.000Z"));
+
+    await mockKv.put(
+      `${UPTIME_KV_KEYS.notificationState}:channel:${ChannelName.Telegram}`,
+      JSON.stringify({
+        lastMessageId: "100",
+        downSince: "2026-01-01T10:00:00.000Z",
+      }),
+    );
+
+    const channel = createChannel([
+      { name: "Check 1", target: "http://1", status: "up" },
+    ]);
+    await channel.notify();
+
+    expect(sendMessageMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining(
+          "The incident lasted 1 hour 25 minutes.",
+        ),
+      }),
+    );
+    vi.useRealTimers();
+  });
+
+  it("should omit the duration when the start time is unknown", async () => {
+    await mockKv.put(
+      `${UPTIME_KV_KEYS.notificationState}:channel:${ChannelName.Telegram}`,
+      JSON.stringify({ lastMessageId: "100" }),
+    );
+
+    const channel = createChannel([
+      { name: "Check 1", target: "http://1", status: "up" },
+    ]);
+    await channel.notify();
+
+    expect(sendMessageMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.not.stringContaining("The incident lasted"),
+      }),
+    );
+  });
 });
