@@ -10,6 +10,7 @@ import {
   statuspagePostmortemTemplate,
   statuspageRecoveryTemplate,
 } from "./templates";
+import { formatDuration } from "../../../util/formatDuration";
 
 interface IncidentData {
   name: string;
@@ -76,6 +77,24 @@ const updateIncident = async ({
   });
 };
 
+/** How long the incident lasted, from its start until resolution (or now). */
+const getIncidentDuration = (
+  incident: StatuspageIncident,
+): string | undefined => {
+  const start = incident.started_at || incident.created_at;
+  if (!start) {
+    return undefined;
+  }
+  const startMs = Date.parse(start);
+  const endMs = incident.resolved_at
+    ? Date.parse(incident.resolved_at)
+    : Date.now();
+  if (Number.isNaN(startMs) || Number.isNaN(endMs)) {
+    return undefined;
+  }
+  return formatDuration(endMs - startMs);
+};
+
 /** Resolve the incident, optionally create & publish a postmortem. */
 const resolveIncident = async ({
   incidentId,
@@ -100,10 +119,19 @@ const resolveIncident = async ({
   const latestUpdate = incident.incident_updates.find(
     (u) => u.status !== "resolved" && u.status !== "postmortem",
   );
-  const incidentDetails =
-    latestUpdate?.body || "One or more services experienced a disruption.";
+  // The postmortem is written after resolution, so switch the downtime
+  // update's wording to past tense.
+  const incidentDetails = latestUpdate?.body
+    ? latestUpdate.body.replace(
+        "The following services are currently down:",
+        "The following services were down:",
+      )
+    : "One or more services experienced a disruption.";
 
-  const postmortemBody = statuspagePostmortemTemplate({ incidentDetails });
+  const postmortemBody = statuspagePostmortemTemplate({
+    incidentDetails,
+    duration: getIncidentDuration(incident),
+  });
 
   console.log("[Statuspage] creating postmortem");
   await incidentService.createPostmortem(incidentId, {

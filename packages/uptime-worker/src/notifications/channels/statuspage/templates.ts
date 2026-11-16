@@ -22,8 +22,13 @@ export const statuspageRecoveryTemplate = parseTemplate(
 
 export const statuspagePostmortemTemplate = parseTemplate<{
   incidentDetails: string;
+  duration?: string;
 }>(`## Issue
 {{ incidentDetails }}
+{% if duration -%}
+## Duration
+The incident lasted {{ duration }}.
+{% endif -%}
 ## Resolution
 All services are back up and running and the incident has been resolved.
 `);

@@ -15,6 +15,8 @@ export const telegramDowntimeTemplate = parseTemplate<{
 
 export const telegramRecoveryTemplate = parseTemplate<{
   statuspageUrl?: string;
+  duration?: string;
 }>(`✅ All checks are up and running!
+{% if duration %}The incident lasted {{ duration }}.{% endif %}
 {% if statuspageUrl %}Status page: {{ statuspageUrl }}{% endif %}
 `);
